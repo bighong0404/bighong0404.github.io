@@ -259,6 +259,7 @@ cpu/内存: top -d 1 -n 20 | grep pid
 
   官方提供脚本bin/os.sh, 调整了一些系统内核参数(包含限制swap区), 强烈建议执行.
 - [os.sh内容](http://blog.soliloquize.org/2018/09/02/RocketMQ-ossh%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E/)
+
 ```
 这个参数应该也是用来控制空闲内存大小的。但是很多发行版没有这个参数，一般根据部署环境看是否支持，不支持的话不进行设置应该也没关系。
 ### sudo sysctl -w vm.extra_free_kbytes=2000000
