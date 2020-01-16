@@ -258,7 +258,7 @@ cpu/内存: top -d 1 -n 20 | grep pid
     限制swap区的分配. swap区是在内存昂贵的年代为了给系统腾出足够的物理内存而划出来的基于磁盘的虚拟内存, 以缓解内存不足的情况. 跟运维了解到阿里云服务器默认关闭swap区. 并且也找到官方说明, 建议限制swap区.
 
   官方提供脚本bin/os.sh, 调整了一些系统内核参数(包含限制swap区), 强烈建议执行.
-- [os.sh内容](http://blog.soliloquize.org/2018/09/02/RocketMQ-ossh%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E/)
+- os.sh内容
 
 ```
 这个参数应该也是用来控制空闲内存大小的。但是很多发行版没有这个参数，一般根据部署环境看是否支持，不支持的话不进行设置应该也没关系。
@@ -434,6 +434,8 @@ maxMessageSize=6291456
 
 [阿里中间件团队博客, Kafka vs RocketMQ - Topic数量对单机性能的影响](http://jm.taobao.org/2016/04/07/kafka-vs-rocketmq-topic-amout/)
 
+[os.sh内容说明](http://blog.soliloquize.org/2018/09/02/RocketMQ-ossh%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E/)
+  
   **集群部署参考**
 
  https://www.jianshu.com/p/9f1b8d2f73dd
