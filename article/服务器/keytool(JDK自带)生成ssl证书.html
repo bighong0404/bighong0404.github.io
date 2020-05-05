@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>keytool(JDK自带)生成ssl证书</title>
+    <style type="text/css" media="all">
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        color: #777;
+        background-color: white;
+      }
+      .container {
+        width: 700px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .post {
+        font-family: Georgia, "Times New Roman", Times, "SimSun", serif;
+        position: relative;
+        padding: 70px;
+        bottom: 0;
+        overflow-y: auto;
+        font-size: 16px;
+        font-weight: normal;
+        line-height: 25px;
+        color: #515151;
+      }
+
+      .post h1{
+        font-size: 50px;
+        font-weight: 500;
+        line-height: 60px;
+        margin-bottom: 40px;
+        color: inherit;
+      }
+
+      .post p {
+        margin: 0 0 35px 0;
+      }
+
+      .post img {
+        border: 1px solid #D9D9D9;
+      }
+
+      .post a {
+        color: #28A1C5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="post">
+        <h1 class="title">keytool(JDK自带)生成ssl证书</h1>
+        <div class="show-content">
+          <p>1:什么是HTTPS？<br></p><p>HTTPS其实是有两部分组成：HTTP + SSL / TLS，</p><p>也就是在HTTP上又加了一层处理加密信息的模块，并且会进行身份的验证。</p><p><br></p><p>2:什么是自签名证书？</p><p>就是自己生成的证书，并不是官方生成的证书。</p><p>除非是很正式的项目，否则使用自己签发的证书即可，因为官方生成证书是要花钱滴。</p><p>3:进入正题，使用JDK自带工具KeyTool 生成自签发证书！</p><p>第一步：为服务器生成证书</p><p>命令:</p><p>keytool</p><p>-genkey</p><p>-alias tomcat(别名)</p><p>-keypass 123456(别名密码)</p><p>-keyalg RSA(算法)</p><p>-keysize 1024(密钥长度)</p><p>-validity 3650(有效期，天单位)</p><p>-keystore tomcat.keystore(指定生成证书的位置和证书名称)</p><p>-storepass 123456(获取keystore信息的密码)</p><p>方便复制版：</p><p>keytool -genkey -alias tomcat -keypass 123456 -keyalg RSA -keysize 1024 -validity 3650 -keystore D:/keys/tomcat.keystore -storepass 123456</p><p>回车执行后如下图：</p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4039130-dd25c7a2343db4eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4039130-dd25c7a2343db4eb.png?imageMogr2/auto-orient/strip" data-image-slug="dd25c7a2343db4eb" data-width="672" data-height="275"><br><div class="image-caption"></div>
+</div><p>点击回车即生成名为：tomcat.keystore的文件。<br></p><p>注意：<br></p><p>What is your first and last name?  建议填域名</p><p><br></p><p>第二步：为客户端生成证书</p><p>为浏览器生成证书，以便让服务器来验证它。</p><p>为了能将证书顺利导入至IE和Firefox，证书格式应该是PKCS12，</p><p>因此，使用如下命令生成：</p><p>keytool</p><p>-genkey</p><p>-alias client</p><p>-keypass 123456</p><p>-keyalg RSA</p><p>-storetype PKCS12</p><p>-keypass 123456</p><p>-storepass 123456</p><p>-keystore client.p12</p><p>方便复制版：</p><p>keytool -genkey -alias client -keypass 123456 -keyalg RSA -keysize 1024 -validity 365 -storetype PKCS12 -keystore client.p12 -storepass 123456</p><p>第二步余下操作步骤同第一步。</p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4039130-dd25c7a2343db4eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"><br><div class="image-caption"></div>
+</div><p>第三步：让服务器信任客户端证书<br></p><p>1、</p><p>由于不能直接将PKCS12格式的证书库导入，</p><p>必须先把客户端证书导出为一个单独的CER文件，使用如下命令：</p><p>keytool -export -alias client -keystore client.p12 -storetype PKCS12 -keypass 123456 -file client.cer</p><p>注意：</p><p>Keypass：指定CER文件的密码，但会被忽略，而要求重新输入</p><p>2、</p><p>将该文件导入到服务器的证书库，添加为一个信任证书：</p><p>keytool -import -v -file D:/keys/client.cer -keystore D:/keys/tomcat.keystor</p><p>e -storepass 123456</p><p>图例：</p><div class="image-package">
+<img src="http://upload-images.jianshu.io/upload_images/4039130-fe31c346ca6c934a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" data-original-src="http://upload-images.jianshu.io/upload_images/4039130-fe31c346ca6c934a.png?imageMogr2/auto-orient/strip" data-image-slug="fe31c346ca6c934a" data-width="1033" data-height="461"><br><div class="image-caption"></div>
+</div><p>完成之后通过 list参数 查看服务器的证书库，</p><p>可以看到两个证书，一个是服务器证书，一个是受信任的客户端证书：</p><p>keytool -list -v -keystore tomcat.keystore</p><p>第四步：让客户端信任服务器证书</p><p>1、</p><p>由于是双向SSL认证，客户端也要验证服务器证书，</p><p>因此，必须把服务器证书添加到浏览器的“受信任的根证书颁发机构”。</p><p>由于不能直接将keystore格式的证书库导入，</p><p>必须先把服务器证书导出为一个单独的CER文件，使用如下命令：</p><p>keytool -keystore tomcat.keystore -export -alias tomcat -file server.cer</p><p>2、</p><p>双击server.cer文件，按照提示安装证书，</p><p>将证书填入到“受信任的根证书颁发机构”。</p><p>填入方法：</p><p>打开浏览器   - 工具  -  internet选项-内容- 证书-把中级证书颁发机构里的www.localhost.com(该名称即时你前面生成证书时填写的名字与姓氏)证书导出来-再把导出来的证书导入  受信任的根颁发机构  就OK了。</p><p>第五步：配置Tomcat服务器</p><p>&lt;Connector port="7443" protocol="org.apache.coyote.http11.Http11Protocol" SSLEnabled="true" maxThreads="150" scheme="https" chemeecure="true" clientAuth="false" sslProtocol="TLS" keystoreFile="tomcat.keystore" keystorePass="123456" truststoreFile="tomcat.keystore" truststorePass="123456"/&gt;</p><p>属性说明：<br></p><p>clientAuth:设置是否双向验证，默认为false，设置为true代表双向验证</p><p>keystoreFile:服务器证书文件路径</p><p>keystorePass:服务器证书密码</p><p>truststoreFile:用来验证客户端证书的根证书，此例中就是服务器证书</p><p>truststorePass:根证书密码</p><p>注意：</p><p>① 设置clientAuth属性为True时，需要手动导入客户端证书才能访问。</p><p>② 要访问https请求 需要访问8443端口，访问http请求则访问Tomcat默认端口（你自己设置的端口，默认8080）即可。</p><p>总结：</p><p>经过以上五步，你使用HTTPS 端口为8443 进行访问的时候 就是经过SSL信息加密，不怕被截获了。</p><p>通话的双方，必须是都拥有证书的端，才能进行会话，换句话说，就是只有安装了咱证书的客户端，才能与服务器通信。</p><p>小贴士：</p><p>强制 https 访问<br></p><p>在 tomcat /conf/web.xml 中的  &lt;welcome- file-list /&gt; 后面加上这</p><p>&lt;login-config&gt;<br></p><p>&lt;!-- Authorization setting for SSL --&gt;</p><p>&lt;auth-method&gt;CLIENT-CERT</p><p>&lt;realm-name&gt;Client Cert Users-only Area</p><p>&lt;/login-config&gt;</p><p>&lt;security-constraint&gt;</p><p>&lt;!-- Authorization setting for SSL --&gt;</p><p>&lt;web-resource-collection &gt;</p><p>&lt;web-resource-name &gt;SSL</p><p>&lt;url-pattern&gt;/*</p><p>&lt;/web-resource-collection&gt;</p><p>&lt;user-data-constraint&gt;</p><p>&lt;transport-guarantee&gt;CONFIDENTIAL</p><p>&lt;/user-data-constraint&gt;</p><p>&lt;/security-constraint&gt;</p><p>完成以上步骤后，在浏览器中输入http的访问地址也会自动转换为https了。<br></p><p><br></p><p><br></p><p>附录1:<br></p><p>keytool常用命令</p><p>-alias       产生别名</p><p>-keystore    指定密钥库的名称(就像数据库一样的证书库，可以有很多个证书，cacerts这个文件是jre自带的，</p><p>你也可以使用其它文件名字，如果没有这个文件名字，它会创建这样一个)</p><p>-storepass   指定密钥库的密码</p><p>-keypass     指定别名条目的密码</p><p>-list        显示密钥库中的证书信息</p><p>-v           显示密钥库中的证书详细信息</p><p>-export      将别名指定的证书导出到文件</p><p>-file        参数指定导出到文件的文件名</p><p>-delete      删除密钥库中某条目</p><p>-import      将已签名数字证书导入密钥库</p><p>-keypasswd   修改密钥库中指定条目口令</p><p>-dname       指定证书拥有者信息</p><p>-keyalg      指定密钥的算法</p><p>-validity    指定创建的证书有效期多少天</p><p>-keysize     指定密钥长度</p><p>使用说明：</p><p>导入一个证书命令可以如下：</p><p>keytool -import -keystore cacerts -storepass 666666 -keypass 888888 -alias alibabacert -file C:\alibabajava\cert\test_root.cer</p><p>其中-keystore cacerts中的cacerts是jre中默认的证书库名字，也可以使用其它名字</p><p>-storepass 666666中的666666是这个证书库的密码</p><p>-keypass 888888中的888888是这个特定证书的密码</p><p>-alias alibabacert中的alibabacert是你导入证书的别名，在其它操作命令中就可以使用它</p><p>-file C:\alibabajava\cert\test_root.cer中的文件路径就是要导入证书的路径</p><p>浏览证书库里面的证书信息，可以使用如下命令：</p><p>keytool -list -v -alias alibabacert -keystore cacerts -storepass 666666</p><p>要删除证书库里面的某个证书，可以使用如下命令：</p><p>keytool -delete -alias alibabacert -keystore cacerts -storepass 666666</p><p>要导出证书库里面的某个证书，可以使用如下命令：</p><p>keytool -export -keystore cacerts -storepass 666666 -alias alibabacert -file F:\alibabacert_root.cer</p><p>要修改某个证书的密码（注意：有些数字认证没有私有密码，只有公匙，这种情况此命令无效）</p><p>这个是交互式的，在输入命令后，会要求你输入密码</p><p>keytool -keypasswd -alias alibabacert -keystore cacerts</p><p>这个不是交互式的，输入命令后直接更改</p><p>Keytool -keypasswd -alias alibabacert -keypass 888888 -new 123456 -storepass 666666 -keystore cacerts</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
