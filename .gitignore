@@ -1,0 +1,6 @@
+
+node_modules/
+_book/
+.git/
+.DS_Store
+back/
