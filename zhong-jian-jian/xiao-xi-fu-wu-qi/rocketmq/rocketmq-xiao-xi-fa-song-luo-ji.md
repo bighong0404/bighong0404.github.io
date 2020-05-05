@@ -1,8 +1,8 @@
-# 1. 同步阻塞等待响应的发送(批量)消息的底层实现逻辑
+# RocketMQ-消息发送逻辑
 
-1) 构建`ResponseFuture`对象, 通过channel向**Broker**发送数据包,  并把`ResponseFuture`对象放入`responseTable`中, 这个concurrentHashMap对象维护所有`ResponseFuture`对象. 
-2) `responseFuture.waitResponse(timeoutMillis)` 通过闭锁`await`阻塞等待. 内部实现是闭锁
-3) netty客户端收到Broker发来的数据包, 通过类型识别是响应数据包,  交由`NettyClientHandler`处理. handler根据数据包中的`requestId`从获取到`responseTable`获取对应的`ResponseFuture`对象, 回写响应数据, 把`responseFuture`对象从map中移除,  若有回调, 则执行回调, 否则通过闭锁唤醒上一步中阻塞等待响应的线程.
+## 1. 同步阻塞等待响应的发送\(批量\)消息的底层实现逻辑
+
+1\) 构建`ResponseFuture`对象, 通过channel向**Broker**发送数据包, 并把`ResponseFuture`对象放入`responseTable`中, 这个concurrentHashMap对象维护所有`ResponseFuture`对象. 2\) `responseFuture.waitResponse(timeoutMillis)` 通过闭锁`await`阻塞等待. 内部实现是闭锁 3\) netty客户端收到Broker发来的数据包, 通过类型识别是响应数据包, 交由`NettyClientHandler`处理. handler根据数据包中的`requestId`从获取到`responseTable`获取对应的`ResponseFuture`对象, 回写响应数据, 把`responseFuture`对象从map中移除, 若有回调, 则执行回调, 否则通过闭锁唤醒上一步中阻塞等待响应的线程.
 
 ```java
 /*====================
@@ -45,10 +45,10 @@ NettyRemotingAbstract.java 超类
             this.responseTable.remove(opaque);
         }
     }
-
 ```
 
-看下``ResponseFuture.java``, 通过闭锁`countDownLatch`来实现阻塞同步
+看下`ResponseFuture.java`, 通过闭锁`countDownLatch`来实现阻塞同步
+
 ```java
     // 阻塞等待响应
     public RemotingCommand waitResponse(final long timeoutMillis) throws InterruptedException {
@@ -64,6 +64,7 @@ NettyRemotingAbstract.java 超类
 ```
 
 在netty的处理handler中, 处理broker返回的数据包, 调用`putResponse(cmd)`来回写结果, 并通过闭锁来唤醒线程
+
 ```java
 /*====================
 NettyRemotingClinet.java
@@ -137,15 +138,12 @@ public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cm
             log.warn(cmd.toString());
         }
     }
-
 ```
----
 
-# 2. 无返回的单条消息发送的底层实现实现逻辑
-1) `request.markOnewayRPC();`标记这个请求是Oneway模式, 服务端服务端在返回数据包时候识别到请求是oneway, 则不写回数据包
-2) 从`semaphoreOneway`oneway信号量中获取许可, 信号量许可值默认65535.
-3) 获取许可成功, 在往通道写数据`channel.writeAndFlush(request)`时候添加监听器`addListener`, 监听器的`operationComplete`中`release`了信号量. 在数据包被发送完成后交被执行线程调用.
-4) 获取许可失败, 则打日志或者返回异常
+## 2. 无返回的单条消息发送的底层实现实现逻辑
+
+1\) `request.markOnewayRPC();`标记这个请求是Oneway模式, 服务端服务端在返回数据包时候识别到请求是oneway, 则不写回数据包 2\) 从`semaphoreOneway`oneway信号量中获取许可, 信号量许可值默认65535. 3\) 获取许可成功, 在往通道写数据`channel.writeAndFlush(request)`时候添加监听器`addListener`, 监听器的`operationComplete`中`release`了信号量. 在数据包被发送完成后交被执行线程调用. 4\) 获取许可失败, 则打日志或者返回异常
+
 ```java
 /*====================
 NettyRemotingAbstract.java 超类
@@ -216,13 +214,9 @@ NettyRemotingAbstract.java 超类
 }
 ```
 
----
+## 3. 异步带回调的单条消息发送的底层实现逻辑
 
-# 3. 异步带回调的单条消息发送的底层实现逻辑
-
-1) 异步消息交由异步线程池去执行发送.
-2) 跟无返回的消息发送一样, 会从`semaphoreAsync`异步信号量中获取许可, 信号量许可值默认65535.
-3) 其他过程跟同步发送的逻辑一样, 只是handler在处理返回数据包的时候, 若有回调, 则执行回调, 否则通过闭锁唤醒上一步中同步阻塞等待响应的线程.
+1\) 异步消息交由异步线程池去执行发送. 2\) 跟无返回的消息发送一样, 会从`semaphoreAsync`异步信号量中获取许可, 信号量许可值默认65535. 3\) 其他过程跟同步发送的逻辑一样, 只是handler在处理返回数据包的时候, 若有回调, 则执行回调, 否则通过闭锁唤醒上一步中同步阻塞等待响应的线程.
 
 ```java
 /*====================
@@ -313,7 +307,5 @@ public void invokeAsyncImpl(final Channel channel, final RemotingCommand request
             }
         }
     }
-
 ```
-
 
