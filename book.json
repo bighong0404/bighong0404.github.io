@@ -13,9 +13,10 @@
         "-sharing", "-lunr", "-search", 
         "search-pro",
         "back-to-top-button",
-        "atoc",
         "code",
         "-splitter",
+        "anchor-navigation-ex",
+        "terminal",
         "expandable-chapters"
     ],
     "pluginsConfig": {
@@ -25,6 +26,32 @@
         },
         "code": {
             "copyButtons": true
+        },
+        "anchor-navigation-ex": {
+            "showLevel": false,
+            "associatedWithSummary": false,
+            "printLog": false,
+            "multipleH1": true,
+            "mode": "float",
+            "showGoTop":true,
+            "float": {
+                "floatIcon": "fa fa-navicon",
+                "showLevelIcon": false,
+                "level1Icon": "fa fa-hand-o-right",
+                "level2Icon": "fa fa-hand-o-right",
+                "level3Icon": "fa fa-hand-o-right"
+            },
+            "pageTop": {
+                "showLevelIcon": false,
+                "level1Icon": "fa fa-hand-o-right",
+                "level2Icon": "fa fa-hand-o-right",
+                "level3Icon": "fa fa-hand-o-right"
+            }
+        },
+        "terminal": {
+            "copyButtons": true,
+            "fade": false,
+            "style": "flat"
         }
     }
 }
