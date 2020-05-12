@@ -33,7 +33,7 @@
     - [1_秒杀系统五个架构原则](/article/设计/极客-设计秒杀系统/1秒杀系统五个架构原则.md)
     - [2_数据的动静分离](article/设计/极客-设计秒杀系统/2数据的动静分离.md)
 - 算法
-    - [snowflake雪花算法](article/设计/算法algarithm/雪花算法(SnowFlake).md)
+    - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
 ---
 
 ### 工作总结
