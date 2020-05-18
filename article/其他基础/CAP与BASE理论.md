@@ -107,9 +107,7 @@
 
 既然一个分布式系统无法同时满足一致性、可用性、分区容错性三个特点，所以我们就需要抛弃一样：
 
-
-
-![img](https:////upload-images.jianshu.io/upload_images/3972450-a3df631761a90670.png?imageMogr2/auto-orient/strip|imageView2/2/w/295/format/webp)
+![](img/image-20200519005531554.png)
 
 | 选择 | 说明                                                         |
 | ---- | ------------------------------------------------------------ |
