@@ -1,6 +1,4 @@
 
-<!-- toc -->
-
 # 1. 系统模型
 ## 1.1 数据模型, 
   ZNode, 树形结构, "/"分割路径
@@ -11,9 +9,9 @@
 持久顺序节点(persistent_sequential), 父节点维护第一级子节点的顺序, 给子节点名加数字后缀
 临时节点(ephemeral), 生命周期跟会话绑一起, 临时节点只能是叶子节点, 不能有下一级节点
 临时顺序节点(ephemeral_sequential), 跟持久顺序节点类似, 只不过是临时的
-
   * 节点状态信息```get命令```
-![状态信息.png](https://upload-images.jianshu.io/upload_images/4039130-235f64208f3d4f5f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![状态信息.png](img/1240.png)
+  * 
 
 
 ## 1.3 版本 - 乐观锁, 保证分布式数据原子性操作
@@ -21,15 +19,17 @@ version: 当前数据节点 **数据内容** 的版本号
 cversion: 当前数据节点 **子节点** 的版本号
 aversion: 当前数据节点 **ACL变更版本号** 的版本号
 
-![image.png](https://upload-images.jianshu.io/upload_images/4039130-20c7d117ef3ca1e5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](img/1240-20200514233756042.png)
+
+
 
 
 版本值表示的对应信息的修改次数(从0起计), 内容不变但又修改操作, 同样也会递增.
 
 ##1.4 Watcher - 数据变更通知
 
-* watcher时间的通知状态与时间类型      ![image.png](https://upload-images.jianshu.io/upload_images/4039130-5cb4411dde12e38e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
+* watcher时间的通知状态与时间类型      ![image.png](img/1240-20200514233800767.png)
+* 
 * 回调方法process()
 > abstract public void process(WatchedEvent even);
 
@@ -40,12 +40,10 @@ aversion: 当前数据节点 **ACL变更版本号** 的版本号
 * 工作机制
 可以概括为三个过程: **客户端注册Watcher**, **服务端处理Watcher**, **客户端回调Watcher**
 
-![image.png](https://upload-images.jianshu.io/upload_images/4039130-6959c83af628124e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](img/1240-20200514233805193.png)
 
 
 * 客户端注册watcher
-
-
 
 * 服务端处理Watcher
 
@@ -101,7 +99,7 @@ Super|Digest模式的特殊形式, 超级用户, 拥有所有权限, 在zoo.cfg�
 * Leader选举    
 Leader选举是保证分布式数据一致性的关键所在。当Zookeeper集群中的一台服务器出现以下两种情况之一时，需要进入Leader选举。
 ***服务器启动时期的Leader选举*** --- 当两台机启动了, 就进入选举流程
- 
+
 1. 初始情况都会把自己作为leader来投票, 投票信息(包含SID也就是myid, ZXID)发给其他服务器实例
 2. 接收到其他实例的投票信息, 检查有效性: 是否本轮投票, 是否来自LOOKING状态的服务器
 3. 处理投票, PK规则
@@ -120,7 +118,9 @@ Leader选举是保证分布式数据一致性的关键所在。当Zookeeper集�
 5. 统计投票, 选出Leader
 6. 修改服务器状态
 
-![选举示例图.png](https://upload-images.jianshu.io/upload_images/4039130-31702f627b8def33.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![选举示例图.png](img/1240-20200514233817728.png)
+
+
 
 
 ***选举小结***
@@ -137,7 +137,9 @@ zookeeper3.4.0版本后废弃了前三种, 只留第四种TCP版本的FastLeader
 ``` 
 org.apache.zookeeper.server.quorum.FastLeaderElection
 ```
-![选举算法.png](https://upload-images.jianshu.io/upload_images/4039130-f6b217b7afa25ad1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![选举算法.png](img/1240-20200514233821071.png)
+
+
 
 
 ***服务器状态***
@@ -152,7 +154,10 @@ zxid：被推举的Leader事务ID。
 electionEpoch：逻辑时钟，用来判断多个投票是否在同一轮选举周期中，该值在服务端是一个自增序列，每次进入新一轮的投票后，都会对该值进行加1操作。
 peerEpoch：被推举的Leader的epoch。
 state：当前服务器的状态。
-![Vote.png](https://upload-images.jianshu.io/upload_images/4039130-f36e0cbdde0c76de.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![Vote.png](img/1240-20200514233825281.png)
+
+
 
 
 * Leader 和 Follower启动交互过程
