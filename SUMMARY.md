@@ -79,6 +79,6 @@
 - [数据一致性](article/其他基础/数据一致性.md)
 - [正则表达式的语法](article/其他基础/正则表达式的语法.md)
 - [UML概念](article/其他基础/UML概念.md)
--  [CAP与BASE理论.md](article/其他基础/CAP与BASE理论.md) 
+- [CAP与BASE理论.md](article/其他基础/CAP与BASE理论.md) 
 
 ---
