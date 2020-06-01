@@ -20,7 +20,6 @@
       -  [并发编程实战-s14-构建自定义同步工具](article/编程/JAVA/并发/并发编程实战-s14-构建自定义同步工具.md) 
       -  [并发编程实战-s15-原子变量与非阻塞同步机制](article/编程/JAVA/并发/并发编程实战-s15-原子变量与非阻塞同步机制.md) 
       -  [并发编程实战-s16-Java内存模型](article/编程/JAVA/并发/并发编程实战-s16-Java内存模型.md) 
-      -  [附录](article/编程/JAVA/并发/附录.md) 
     - maven
       -  [配置阿里云私服](article/编程/maven/配置阿里云私服.md) 
       
@@ -70,6 +69,7 @@
     -  [极客时间-11-分布式数据库的选择](article/设计/DDD/极客时间-11-分布式数据库的选择.md) 
 - 算法
     - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
+    - [从ThreadLocal的实现看散列算法.md](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
 
 ---
 
