@@ -1,3 +1,5 @@
+
+
  JDK 的 ThreadLocal 源码有一段有意思的代码，如下所示。
 
 ```java
@@ -218,3 +220,6 @@ f(1) = 1
 当n趋向于无穷大时，前一项与后一项的比值越来越逼近黄金比
 
 最后总结下来看，ThreadLocal 中使用了斐波那契散列法，来保证哈希表的离散度。而它选用的乘数值即是`2^32 * 黄金分割比`。
+
+
+> 转自: https://blog.csdn.net/y4x5M0nivSrJaY3X92c/article/details/81124944
