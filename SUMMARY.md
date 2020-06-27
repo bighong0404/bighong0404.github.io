@@ -32,10 +32,10 @@
         - [0_kafka](article/中间件/消息服务器/Kafka.md)
         - [5_深入kafka](article/中间件/消息服务器/5深入kafka.md)
         - [6_可靠的数据传递](article/中间件/消息服务器/6可靠的数据传递.md)
-        - [kafka2-3-0测试报告.md](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
+        - [kafka2-3-0测试报告](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
     - RocketMQ
         - [RocketMQ-消息发送逻辑](article/中间件/消息服务器/RocketMQ-消息发送逻辑.md)
-        - [RocketMQ4-6-0测试报告.md](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
+        - [RocketMQ4-6-0测试报告](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
     - [如何在MQ中实现支持任意延迟的消息](article/中间件/消息服务器/如何在MQ中实现支持任意延迟的消息.md)
 - ElasticSearch
     - [入门](article/中间件/ElasticSearch/入门.md)
@@ -65,14 +65,9 @@
     -  [极客时间-10-基于DDD的微服务设计实例](article/设计/DDD/极客时间-10-基于DDD的微服务设计实例.md) 
     -  [极客时间-11-分布式数据库的选择](article/设计/DDD/极客时间-11-分布式数据库的选择.md) 
 - 算法
+    - [经典排序算法](article/设计/算法algarithm/经典排序算法.md) 
     - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
-    - [从ThreadLocal的实现看散列算法.md](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
-
----
-
-### 工作总结
-
-- 
+    - [从ThreadLocal的实现看散列算法](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
 
 ---
 
