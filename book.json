@@ -13,6 +13,7 @@
         "-sharing", "-lunr", "-search", 
         "search-pro",
         "back-to-top-button",
+        "mathjax",
         "code",
         "-splitter",
         "anchor-navigation-ex",
