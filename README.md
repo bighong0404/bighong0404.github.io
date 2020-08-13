@@ -23,6 +23,12 @@
         -  [s16-Java内存模型](article/编程/JAVA/并发/并发编程实战-s16-Java内存模型.md) 
     - maven
       -  [配置阿里云私服](article/编程/maven/配置阿里云私服.md) 
+- 基础
+  - 算法
+      - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
+      - [从ThreadLocal的实现看散列算法.md](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
+  - 编码
+      -  [base64.md](article/设计/编码/base64.md) 
 ---
 
 ### 服务器
@@ -67,9 +73,6 @@
     -  [极客时间-9-微服务后的前端设计](article/设计/DDD/极客时间-9-微服务后的前端设计.md) 
     -  [极客时间-10-基于DDD的微服务设计实例](article/设计/DDD/极客时间-10-基于DDD的微服务设计实例.md) 
     -  [极客时间-11-分布式数据库的选择](article/设计/DDD/极客时间-11-分布式数据库的选择.md) 
-- 算法
-    - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
-    - [从ThreadLocal的实现看散列算法.md](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
 
 ---
 
@@ -83,5 +86,6 @@
 - [数据一致性](article/其他基础/数据一致性.md)
 - [正则表达式的语法](article/其他基础/正则表达式的语法.md)
 - [UML概念](article/其他基础/UML概念.md)
+- [CAP与BASE理论.md](article/其他基础/CAP与BASE理论.md) 
 
 ---
