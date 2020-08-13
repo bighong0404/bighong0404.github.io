@@ -2,8 +2,6 @@
 
 个人学习笔记, 暂时有点乱以及不全.
 
-### 编程
-
 - Java
     - 并发
       -  [并发编程实战]
@@ -36,30 +34,33 @@
 ---
 
 ### 中间件
+
 - 消息服务器
-    - Kafka
-      - [0_kafka](article/中间件/消息服务器/Kafka.md)
-      - [5_深入kafka](article/中间件/消息服务器/5深入kafka.md)
-      - [6_可靠的数据传递](article/中间件/消息服务器/6可靠的数据传递.md)
-      -  [kafka2-3-0测试报告.md](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
-    - RocketMQ
-      - [RocketMQ-消息发送逻辑](article/中间件/消息服务器/RocketMQ-消息发送逻辑.md)
-      -  [RocketMQ4-6-0测试报告.md](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
-    - [如何在MQ中实现支持任意延迟的消息](article/中间件/消息服务器/如何在MQ中实现支持任意延迟的消息.md)
+  - Kafka
+    - [0_kafka](article/中间件/消息服务器/Kafka.md)
+    - [5_深入kafka](article/中间件/消息服务器/5深入kafka.md)
+    - [6_可靠的数据传递](article/中间件/消息服务器/6可靠的数据传递.md)
+    - [kafka2-3-0测试报告](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
+  - RocketMQ
+    - [RocketMQ-消息发送逻辑](article/中间件/消息服务器/RocketMQ-消息发送逻辑.md)
+    - [RocketMQ4-6-0测试报告](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
+  - [如何在MQ中实现支持任意延迟的消息](article/中间件/消息服务器/如何在MQ中实现支持任意延迟的消息.md)
 - ElasticSearch
-    - [入门](article/中间件/ElasticSearch/入门.md)
+  - [入门](article/中间件/ElasticSearch/入门.md)
 - zookeeper
-    - [zookeeper笔记](article/中间件/zookeeper/zookeeper笔记.md)
-    - [zookeeper技术内幕](article/中间件/zookeeper/zookeeper技术内幕.md)
+  - [zookeeper笔记](article/中间件/zookeeper/zookeeper笔记.md)
+  - [zookeeper技术内幕](article/中间件/zookeeper/zookeeper技术内幕.md)
+- MySQL
+  - [MyISAM引擎与表锁](article/中间件/mysql/MyISAM引擎与表锁.md)
 
 ---
 
 ### 设计
 
 - 极客_设计秒杀系统
-    - [0_(前言)秒杀系统关键点](article/设计/极客-设计秒杀系统/0前言-秒杀系统关键点.md)
-    - [1_秒杀系统五个架构原则](/article/设计/极客-设计秒杀系统/1秒杀系统五个架构原则.md)
-    - [2_数据的动静分离](article/设计/极客-设计秒杀系统/2数据的动静分离.md)
+  - [0_(前言)秒杀系统关键点](article/设计/极客-设计秒杀系统/0前言-秒杀系统关键点.md)
+  - [1_秒杀系统五个架构原则](/article/设计/极客-设计秒杀系统/1秒杀系统五个架构原则.md)
+  - [2_数据的动静分离](article/设计/极客-设计秒杀系统/2数据的动静分离.md)
 - 领域驱动设计DDD
     -  [极客时间-0-D基础篇](article/设计/DDD/极客时间-0-D基础篇.md) 
     -  [极客时间-1-DDD分层构](article/设计/DDD/极客时间-1-DDD分层构.md) 
@@ -82,6 +83,7 @@
 ---
 
 ### 其他基础
+
 - [卓有成效的管理者-Peter F Drucker](article/其他基础/卓有成效的管理者-Peter.F.Drucker.md)
 - [数据一致性](article/其他基础/数据一致性.md)
 - [正则表达式的语法](article/其他基础/正则表达式的语法.md)
@@ -89,3 +91,4 @@
 - [CAP与BASE理论.md](article/其他基础/CAP与BASE理论.md) 
 
 ---
+
