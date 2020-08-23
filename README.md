@@ -27,9 +27,9 @@
   - 算法
     - [经典排序算法](article/设计/算法algarithm/经典排序算法.md)
     - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
-    - [从ThreadLocal的实现看散列算法.md](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
+    - [从ThreadLocal的实现看散列算法](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
   - 编码
-    -  [base64.md](article/设计/编码/base64.md) 
+    -  [base64](article/设计/编码/base64.md) 
 
 
 ### 服务器
@@ -42,7 +42,7 @@
       - [0_kafka](article/中间件/消息服务器/Kafka.md)
       - [5_深入kafka](article/中间件/消息服务器/5深入kafka.md)
       - [6_可靠的数据传递](article/中间件/消息服务器/6可靠的数据传递.md)
-      -  [kafka2-3-0测试报告.md](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
+      -  [kafka2-3-0测试报告](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
     - RocketMQ
       - [RocketMQ-消息发送逻辑](article/中间件/消息服务器/RocketMQ-消息发送逻辑.md)
       -  [RocketMQ4-6-0测试报告.md](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
@@ -87,6 +87,6 @@
 - [数据一致性](article/其他基础/数据一致性.md)
 - [正则表达式的语法](article/其他基础/正则表达式的语法.md)
 - [UML概念](article/其他基础/UML概念.md)
-- [CAP与BASE理论.md](article/其他基础/CAP与BASE理论.md) 
+- [CAP与BASE理论](article/其他基础/CAP与BASE理论.md) 
 
 ---

@@ -1,6 +1,5 @@
 ### 编程
 
-
 - Java
     - 并发
       -  [并发编程实战]
@@ -22,10 +21,11 @@
       -  [配置阿里云私服](article/编程/maven/配置阿里云私服.md) 
 - 基础
   - 算法
-      - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
-      - [从ThreadLocal的实现看散列算法](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
+    - [经典排序算法](article/设计/算法algarithm/经典排序算法.md)
+    - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
+    - [从ThreadLocal的实现看散列算法](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
   - 编码
-      -  [base64](article/设计/编码/base64.md) 
+    -  [base64](article/设计/编码/base64.md) 
 
 
 ### 服务器
@@ -41,7 +41,7 @@
       -  [kafka2-3-0测试报告](article/中间件/消息服务器/kafka2-3-0测试报告.md) 
     - RocketMQ
       - [RocketMQ-消息发送逻辑](article/中间件/消息服务器/RocketMQ-消息发送逻辑.md)
-      -  [RocketMQ4-6-0测试报告](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
+      -  [RocketMQ4-6-0测试报告.md](article/中间件/消息服务器/RocketMQ4-6-0测试报告.md) 
     - [如何在MQ中实现支持任意延迟的消息](article/中间件/消息服务器/如何在MQ中实现支持任意延迟的消息.md)
 - ElasticSearch
     - [入门](article/中间件/ElasticSearch/入门.md)
