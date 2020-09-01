@@ -31,9 +31,6 @@
   - 编码
     -  [base64](article/设计/编码/base64.md) 
 
-
-### 服务器
-
 ---
 
 ### 中间件
@@ -77,9 +74,9 @@
 
 ---
 
-### 工作总结
-- - 
-
+### linux
+  - [Linux的进程、线程、文件描述符](article/linux/Linux的进程、线程、文件描述符是什么.md)
+  - [Linux系统中的Page-cache和Buffer-cach](article/linux/Linux系统中的Page-cache和Buffer-cache.md)
 ---
 
 ### 其他基础
@@ -90,3 +87,7 @@
 - [CAP与BASE理论](article/其他基础/CAP与BASE理论.md) 
 
 ---
+
+
+### 工作总结
+- - 

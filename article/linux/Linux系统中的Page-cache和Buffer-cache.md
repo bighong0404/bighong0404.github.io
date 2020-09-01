@@ -2,7 +2,7 @@
 
 首先，我们来了解下内存的使用情况
 
-![](https://upload-images.jianshu.io/upload_images/4039130-016483f16032b175.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![img](img/1240.png)
 
 * Mem：表示物理内存统计。
 * total：表示物理内存总量(total = used + free)。
