@@ -1,7 +1,7 @@
 # 运行时数据区域
 [内存模型脑图](http://naotu.baidu.com/file/b353909f25734fbb1c27bc90a2104ce0?token=6227939a8fb74098)
 
-![](https://upload-images.jianshu.io/upload_images/4039130-d80fbb31020ed12d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](img/1240-20200902000707487.png)
 
 
 ### 废除永久代的原因？
@@ -19,7 +19,7 @@
 
 - 对象头的Mark Word部分存储对象自身的运行时数据,  会根据对象当时的运行环境来变更这部分的存储内容. 
 
-![](https://upload-images.jianshu.io/upload_images/4039130-caa5faa956aa22c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](img/1240-20200902000712446.png)
 
 
 ---
@@ -28,12 +28,12 @@
 * 通过保存在虚拟机栈中的reference数据来操作堆上的对象实例
 * reference只是一个对象的引用, 具体访问方式由虚拟机决定: 句柄访问, 直接指针访问
 
-![句柄访问](https://upload-images.jianshu.io/upload_images/4039130-ca122e2e9c99ef0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![句柄访问](img/1240-20200902000717311.png)
 
 * 句柄访问, reference保存的是对象的句柄地址, **句柄地址包含对象实例数据与对象类型数据的地址**. 因此在对象被移动(GC时候会移动)时只改变句柄中的实例数据指针, reference本身不需要修改. **句柄访问方式就是间接指针方式**.
 * (**SUN HotSpot使用**)直接指针访问, reference保存的就是对象的地址. 因此访问速度快(节省一次指针寻址的开销). 
 
-![直接指针访问](https://upload-images.jianshu.io/upload_images/4039130-212db839ee011c2f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![直接指针访问](img/1240-20200902000720013.png)
 
 ---
 
@@ -63,4 +63,5 @@
 * DirectByteBuffer分配内存时候, 抛出OOM异常时候, 并没有真正向操作系统申请分配内存, 而是通过计算得知内存无法分配, 再手动抛异常.
 * 通过反射获取Unsafe实例, unsafe.allocateMemory()才是真正申请分配直接内存的方法
 * 直接内存导致的内存溢出, heap dump文件不会看到明显异常. 若dump并且文件很小, 并且使用了nio, 有可能就是直接内存溢出.
----  
+
+---
