@@ -23,9 +23,9 @@
     - 数据结构
       -  [二叉树](article/编程/数据结构/二叉树.md) 
     - 算法
-      - [经典排序算法](article/设计/算法algarithm/经典排序算法.md)
-      - [snowflake雪花算法](article/设计/算法algarithm/snowflake雪花算法.md)
-      - [从ThreadLocal的实现看散列算法](article/设计/算法algarithm/从ThreadLocal的实现看散列算法.md) 
+      - [经典排序算法](article/编程/算法algarithm/经典排序算法.md)
+      - [snowflake雪花算法](article/编程/算法algarithm/snowflake雪花算法.md)
+      - [从ThreadLocal的实现看散列算法](article/编程/算法algarithm/从ThreadLocal的实现看散列算法.md) 
     - 编码
       -  [base64](article/设计/编码/base64.md) 
 
