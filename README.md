@@ -25,7 +25,9 @@
       -  [配置阿里云私服](article/编程/maven/配置阿里云私服.md) 
 - 基础
   - 数据结构
-    -  [二叉树](article/编程/数据结构/二叉树.md) 
+    -  [二叉查找算法与二叉树](article/编程/数据结构/二叉查找算法与二叉树.md) 
+    -   [二叉搜索树](article/编程/数据结构/二叉搜索树.md) 
+    -   [红黑树](article/编程/数据结构/红黑树.md) 
   - 算法
     - [经典排序算法](article/编程/算法algarithm/经典排序算法.md)
     - [snowflake雪花算法](article/编程/算法algarithm/snowflake雪花算法.md)
