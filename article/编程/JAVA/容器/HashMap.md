@@ -40,6 +40,29 @@ static final int MIN_TREEIFY_CAPACITY = 64;
 
 
 
+## 哈希扰动函数, hash()
+
+
+
+```java
+/* 
+ * 作用：让key的hash值的高16位也参与路由运算
+ * 异或：相同则返回0，不同返回1
+ *
+ * h = 0b 0010 0101 1010 1100 0011 1111 0010 1110
+ * 0b 0010 0101 1010 1100 0011 1111 0010 1110
+ * ^
+ * 0b 0000 0000 0000 0000 0010 0101 1010 1100
+ * => 0010 0101 1010 1100 0001 1010 1000 0010
+ */
+static final int hash(Object key) {
+    int h;
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+```
+
+
+
 ## 保存方法 put() -> putVal()
 
 ```java
@@ -273,4 +296,46 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 ```
 
 
+
+## 查询节点 get() -> getNode()
+
+```java
+    /**
+     * Implements Map.get and related methods.
+     *
+     * @param hash hash for key
+     * @param key the key
+     * @return the node, or null if none
+     */
+    final Node<K,V> getNode(int hash, Object key) {
+        //tab：引用当前hashMap的散列表
+        //first：桶位中的头元素
+        //e：临时node元素
+        //n：table数组长度
+        Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+                (first = tab[(n - 1) & hash]) != null) {
+            //第一种情况：定位出来的桶位元素 即为咱们要get的数据
+            if (first.hash == hash && // always check first node
+                    ((k = first.key) == key || (key != null && key.equals(k))))
+                return first;
+
+            //说明当前桶位不止一个元素，可能 是链表 也可能是 红黑树
+            if ((e = first.next) != null) {
+                //第二种情况：桶位升级成了 红黑树
+                if (first instanceof TreeNode)//下一期说
+                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                //第三种情况：桶位形成链表
+                do {
+                    if (e.hash == hash &&
+                            ((k = e.key) == key || (key != null && key.equals(k))))
+                        return e;
+
+                } while ((e = e.next) != null);
+            }
+        }
+        return null;
+    }		
+```
 
