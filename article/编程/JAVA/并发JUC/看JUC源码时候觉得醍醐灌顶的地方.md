@@ -1,6 +1,6 @@
 
 
-# 1. 处理多线程竞争的方式, 几乎都是CAS操作+分段锁
+# 1. 处理多线程竞争的方式, 都是CAS操作, 再配合分段锁
 
 LongAdder, ConcurrentHashMap思路都差不多
 
