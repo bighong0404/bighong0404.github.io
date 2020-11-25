@@ -1,12 +1,115 @@
-# 1. 独占模式, 共享模式区别
+
+
+# 1. AQS原理图
+
+![AQS-条件队列](img/AQS-条件队列.png)
+
+# 2. 独占模式, 共享模式区别
 
 
 
-相继唤醒后继节点
+- 共享模式在`releaseShared()`与`acquireShared()`实现中都会尝试调用`doReleaseShared()`, 唤醒阻塞队列的head的后继节点. 并且被唤醒的后继节点争抢到资源, 把自己设为新head后, 会尝试唤醒他的后继节点.  因此共享模式只要有节点被唤醒, 就会**相继**唤醒自己的后继节点.
+- 独占模式`release()`时候每次只唤醒一个后继节点, 后继节点争抢到资源, 把自己设为新head. **没有唤醒后继节点**. 
+
+```java
+	// 独占模式 - 释放资源
+	public final boolean release(int arg) {
+        if (tryRelease(arg)) {
+            Node h = head;
+            if (h != null && h.waitStatus != 0)
+                // 唤醒后继节点
+                unparkSuccessor(h);
+            return true;
+        }
+        return false;
+    }
+// ========================================================
+	// 共享模式 - 获取资源
+	public final void acquireShared(int arg) {
+        if (tryAcquireShared(arg) < 0)
+            // 实际获取资源
+            doAcquireShared(arg);
+    }
+	// 共享模式 - 获取资源 - 阻塞获取资源
+	private void doAcquireShared(int arg) {
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            for (;;) {
+                final Node p = node.predecessor();
+                if (p == head) {
+                    int r = tryAcquireShared(arg);
+                    if (r >= 0) {
+                        // ★ 2. 更新Head, 并传播唤醒后继节点
+                        setHeadAndPropagate(node, r);
+                        p.next = null; // help GC
+                        if (interrupted)
+                            selfInterrupt();
+                        failed = false;
+                        return;
+                    }
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+					// ★ 1. 堵塞线程从这里被唤醒
+                    parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
+    }
+	
+	// 共享模式 - 获取资源 - 阻塞获取资源 - 更新head, 传播唤醒后继节点
+    private void setHeadAndPropagate(Node node, int propagate) {
+        Node h = head; // Record old head for check below
+        setHead(node);
+        if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0) {
+            Node s = node.next;
+            if (s == null || s.isShared())
+                // ★唤醒后继节点
+                doReleaseShared();
+        }
+    }
+
+	// 共享模式 - 释放资源
+	public final boolean releaseShared(int arg) {
+        if (tryReleaseShared(arg)) {
+            // ★唤醒后继节点
+            doReleaseShared();
+            return true;
+        }
+        return false;
+    }
+
+	// 共享模式, 唤醒后继节点
+	private void doReleaseShared() {
+        for (;;) {
+            Node h = head;
+            if (h != null && h != tail) {
+                int ws = h.waitStatus;
+                if (ws == Node.SIGNAL) {
+                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                        continue;            // loop to recheck cases
+                    // ★ 唤醒后继节点
+                    unparkSuccessor(h);
+                }
+                else if (ws == 0 &&
+                         // 设置为"传播"状态
+                         !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                    continue;                // loop on failed CAS
+            }
+            if (h == head)                   // loop if head changed
+                break;
+        }
+    }
+```
 
 
 
-# 2. Node类的`Node.PROPAGATE`属性作用是啥?
+# 3. Node类的`Node.PROPAGATE`属性作用是啥?
 
 
 
