@@ -47,7 +47,7 @@
 
      
 
-   - `FairSync`或者`NonfairSyncd`在`tryAcquire(int acquires)`的区别, 先检查等待队列有没有线程在排队
+   - `FairSync`或者`NonfairSyncd`在`tryAcquire(int acquires)`也有区别, 先检查等待队列有没有线程在排队
 
      ```java
      /* FairSync */
