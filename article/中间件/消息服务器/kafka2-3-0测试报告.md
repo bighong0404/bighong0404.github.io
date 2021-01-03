@@ -21,6 +21,7 @@ CPU: Intel(R) Xeon(R) CPU E5-2609 v3 @ 1.90GHz, 12核
 ```
 
 ## 1.3 磁盘读瓶颈
+
 ```
 [root]# hdparm -tT --direct /dev/mapper/vg_devenv22-lv_home
 
