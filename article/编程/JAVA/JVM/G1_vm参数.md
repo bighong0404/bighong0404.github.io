@@ -19,15 +19,17 @@
 | -XX:InitiatingHeap OccupancyPercent  | 启动并发GC时的堆内存占用百分比(InitiatingHeapOccupancyPercent) | 45                                                        | G1用它来触发并发GC周期,基于整个堆的使用率,而不只是某一代内存的使用比例。值为 0 则表示“一直执行GC循环)’. 默认值为 45 (例如, 全部的 45% 或者使用了45%). |
 | -XX:G1HeapRegionSize                 | G1内堆内存区块大小                                           | (Xms + Xmx ) /2 / 2048 , 不大于32M，不小于1M，且为2的指数 | G1将堆内存默认均分为2048块，1M<region<32 M，当应用频繁分配大对象时，可以考虑调整这个阈值，因为G1的Humongous区域只能存放一个大对象，适当调整Region大小，尽量让其刚好超过大对象的两倍大小，这样就能充分利用Region的空间 |
 | -XX:GCTimeRatio                      | GC时间占运行时间的比例                                       | G1为9，CMS为99                                            | GC时间占总时间的比例，默认值为99，即允许1%的GC时间。仅仅在Parallel Scavenge收集时有效，公式为1/(1+n) |
-| -XX:G1HeapWastePercent               | 触发Mixed GC的可回收空间百分比                               | 5%                                                        | 在global concurrent marking结束之后，我们可以知道old gen regions中有多少空间要被回收，在每次YGC之后和再次发生Mixed GC之前，会检查垃圾占比是否达到此参数，只有达到了，下次才会发生Mixed GC |
-| -XX:G1MixedGCLive ThresholdPercent   | 会被MixGC的Region中存活对象占比                              | 85%                                                       | old generation region中的存活对象的占比，只有小于此参数，才会被选入CSet |
-| -XX:G1MixedGCCountTarget             |                                                              | 8                                                         | 一次global concurrent marking之后，最多执行Mixed GC的次数    |
+| -XX:G1HeapWastePercent               | 触发Mixed GC的可回收空间百分比                               | 5%                                                        | 在global concurrent marking结束之后，我们可以知道老年代regions中有多少空间要被回收，在每次YGC之后和再次发生Mixed GC之前，会检查垃圾占比是否达到此参数，只有达到了，下次才会发生Mixed GC |
+| -XX:G1MixedGCLive ThresholdPercent   | 只有存活对象低于n%的Region才可以被回收                       | 85%                                                       | 老年代region中的存活对象的占比，只有小于此参数，才会被选入Collection Set.<br />这是一个实验性的标志。此设置取代了 -XX:DefaultMaxNewGenPercent 设置 |
+| -XX:G1OldCSetRegion ThresholdPercent | 设置混合垃圾回收期间要回收的最大旧区域数。                   | 10%                                                       |                                                              |
+| -XX:G1MixedGCCountTarget             | 设置标记周期完成后，对存活数据上限为 G1MixedGCLIveThresholdPercent 的旧区域执行混合垃圾回收的目标次数。 | 8                                                         | 一次global concurrent marking之后，最多执行Mixed GC的次数    |
 | -XX:G1NewSizePercent                 |                                                              | 5%                                                        | 新生代占堆的最小比例                                         |
 | -XX:G1MaxNewSizePercent              |                                                              | 60%                                                       | 新生代占堆的最大比例                                         |
 | -XX:GCPauseIntervalMillis            |                                                              |                                                           | 指定最短多长可以进行一次gc                                   |
 | -XX:G1OldCSetRegion ThresholdPercent | Mixed GC每次回收Region的数量                                 | 10%                                                       | 一次Mixed GC中能被选入CSet的最多old generation region数量比列 |
 | -XX:ParallelGCThreads                |                                                              |                                                           | STW期间，并行GC线程数                                        |
 | -XX:ConcGCThreads                    |                                                              | -XX:ParallelGCThreads/4                                   | 并发标记阶段，并行执行的线程数                               |
+|                                      |                                                              |                                                           |                                                              |
 
 **功能开关：**
 
