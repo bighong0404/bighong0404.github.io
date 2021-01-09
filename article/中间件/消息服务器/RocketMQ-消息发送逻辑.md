@@ -146,6 +146,7 @@ public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cm
 2) 从`semaphoreOneway`oneway信号量中获取许可, 信号量许可值默认65535.
 3) 获取许可成功, 在往通道写数据`channel.writeAndFlush(request)`时候添加监听器`addListener`, 监听器的`operationComplete`中`release`了信号量. 在数据包被发送完成后交被执行线程调用.
 4) 获取许可失败, 则打日志或者返回异常
+
 ```java
 /*====================
 NettyRemotingAbstract.java 超类
