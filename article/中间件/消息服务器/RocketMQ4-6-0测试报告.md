@@ -412,12 +412,13 @@ maxMessageSize=6291456
 - 支持消息绑keys, 代表这条消息的业务关键词，服务器会根据keys创建哈希索引，设置后，可以在Console系统根据Topic、Keys来查询消息，
 - 控制台展示数据细粒度更小, 支持显示消息内容, 消息轨迹等
 - 在多Topic场景下, RocketMQ表现稳定, 而kafka吞吐急剧下降
+- kafka不支持死信队列, 消息失败重发. 
 
 ## 8.2 Kafka比RocketMQ优秀的特性
 
 - 机器配置需求低, 特别是内存, RockeMQ默认要求4G, 官方推荐8G, 而Kafka默认2G
 - 低Topic场景下Kafka吞吐远超RocketMQ
-- RocketMq手动配置broker的master或slave角色(最低2m-2s-async), 因此master挂了不会通过选举一个出来, 需要人工处理.
+- RocketMQ手动配置broker的master或slave角色(最低2m-2s-async), 因此master挂了不会通过选举一个出来, 需要人工处理.
 
 ---
 
