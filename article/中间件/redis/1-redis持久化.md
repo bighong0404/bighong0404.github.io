@@ -36,16 +36,67 @@ redis中的数据执行周期性(见conf配置的`SNAPSHOTTING说明`)的全量�
 
 ### 1.2 AOF(Append Only File)机制
 
-- 对每条写入命令作为日志，以append-only的模式写入一个日志文件中。
-- 当有**写指令**, redis会写到linux系统的**os cache**, 默认每隔1s调用系统`fsync`指令强制把os cache的数据刷到磁盘文件。 
-- 因为append写指令, 因此aof文件会持续膨胀，不会删除过期数据。当aof文件太大了, redis会做`rewrite`操作, 基于当前redis内存中的数据来构造一个新aof文件, 然后删除旧的很大的aof文件.
-- 在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。
+#### 1.2.1 介绍
 
-​    
+对每条写入命令作为日志，以append-only的模式写入一个日志文件中。 当有**写指令**, redis会写到linux系统的**os cache**, 默认每隔1s调用系统`fsync`指令强制把os cache的数据刷到磁盘文件。 
 
-如果想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。
+因为append写指令, 因此aof文件会持续膨胀，不会删除过期数据。当aof文件太大了, redis会做`rewrite`操作, 基于当前redis内存中的数据来构造一个新aof文件, 然后删除旧的很大的aof文件.
 
-如果同时使用RDB和AOF两种持久化机制，那么在redis重启的时候，会使用AOF来重新构建数据，因为AOF中的数据更加完整。
+在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。
+
+
+
+#### 1.2.2 AOF持久化配置设置
+
+**开启**  `AOF`默认是关闭的, 需要修改`appendonly yes`
+
+**刷盘策略**
+
+```conf
+ # appendfsync always 每次写操作都刷盘,  QPS会降低到1,2k
+appendfsync everysec  默认配置, 每秒执行一次fsync主动刷盘
+# appendfsync no      不主动刷盘, 依赖系统os cache刷盘策略, 不可控
+```
+
+
+
+#### 1.2.3 AOF rewrite
+
+**触发条件**
+
+```conf
+auto-aof-rewrite-percentage 100  当前aof文件比上次redis记录的aof文件增大的百分数 
+auto-aof-rewrite-min-size 64mb   aof文件最小大小
+```
+
+
+
+**rewrite过程**
+
+(1) redis fork一个子进程
+(2) 子进程基于当前内存中的数据，构建日志，开始往一个新的临时的AOF文件中写入日志
+(3) redis主进程，接收到client新的写操作之后，在内存中写入日志，同时新的日志也继续写入旧的AOF文件
+(4) 子进程写完新的日志文件之后，redis主进程将内存中的新日志再次追加到新的AOF文件中
+(5) 用新的日志文件替换掉旧的日志文件
+
+
+
+#### 1.2.4 AOF 破损文件的修复
+
+用`redis-check-aof --fix aof文件名`命令来修复破损的AOF文件.  会把aof文件中损坏的命令删除. 
+
+
+
+### 1.3 AOF和RDB同时工作
+
+(1) 如果RDB在执行snapshotting操作，那么redis不会执行AOF rewrite; 如果redis再执行AOF rewrite，那么就不会执行RDB snapshotting
+(2) 如果RDB在执行snapshotting，此时用户执行BGREWRITEAOF命令，那么等RDB快照生成之后，才会去执行AOF rewrite
+(3) 同时有RDB snapshot文件和AOF日志文件，那么redis重启的时候，会优先使用AOF进行数据恢复，因为其中的日志更完整
+(4) 如果想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。
+
+
+
+
 
 
 
