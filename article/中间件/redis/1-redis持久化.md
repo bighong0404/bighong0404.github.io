@@ -52,8 +52,8 @@ redis中的数据执行周期性(见conf配置的`SNAPSHOTTING说明`)的全量�
 
 **刷盘策略**
 
-```conf
- # appendfsync always 每次写操作都刷盘,  QPS会降低到1,2k
+```shell
+# appendfsync always 每次写操作都刷盘,  QPS会降低到1,2k
 appendfsync everysec  默认配置, 每秒执行一次fsync主动刷盘
 # appendfsync no      不主动刷盘, 依赖系统os cache刷盘策略, 不可控
 ```
@@ -64,9 +64,9 @@ appendfsync everysec  默认配置, 每秒执行一次fsync主动刷盘
 
 **触发条件**
 
-```conf
-auto-aof-rewrite-percentage 100  当前aof文件比上次redis记录的aof文件增大的百分数 
-auto-aof-rewrite-min-size 64mb   aof文件最小大小
+```shell
+auto-aof-rewrite-percentage 100  # 当前aof文件比上次redis记录的aof文件增大的百分数 
+auto-aof-rewrite-min-size 64mb   # aof文件最小大小
 ```
 
 

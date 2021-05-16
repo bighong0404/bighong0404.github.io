@@ -44,6 +44,8 @@ master node有一个backlog，默认是1MB大小. master node给slave node复制
 
 `info server`命令可以看到master run id. 
 
+run id是40位字符组成,是一个随机的十六进制字符. 
+
 根据host+ip定位master node，是不靠谱的，如果master node重启或者数据出现了变化，那么slave node应该根据不同的run id区分，run id不同就做全量复制
 
 如果需要不更改run id重启redis，可以使用redis-cli debug reload命令
