@@ -12,17 +12,53 @@ redis cluster是支持N个master，每个master有多个slave读写分离的架�
 
 # 3. 数据分布算法
 
-## 3.1 hash 
+## 3.1 普通hash 
+
+<img src="img/image-20210518000428735.png" alt="image-20210518000428735" style="zoom:50%;" />
+
+缺点: 当缓存服务器数量发生变化时，会引起缓存的雪崩，可能会引起整体系统压力过大而崩溃（大量缓存同一时间失效）。
 
 
 
 ## 3.2 一致性hash 
 
+一致性hash算法（自动缓存迁移）, 配合虚拟节点, 能使缓存更加均匀的分布在各个服务器上. 
+
+一致性哈希算法是对2^32取模. 由2的32次方个点组成的圆环称为hash环. 
+
+
+
+<img src="img/image-20210518000748082.png" alt="image-20210518000748082" style="zoom:50%;" />
+
+
+
 
 
 ## 3.3 redis cluster的hash
 
+hash算法：`HASH_SLOT=CRC16(key) mod 16384`
 
+对每个key值计算CRC16值，然后对16384取模，这样来获取key对应的hash slot。
+
+
+
+redis cluster设定了16384(2^14)个hash slot，这16384个slot会均匀分配到各个master上面. 
+
+增加一个master，就将其他master的hash slot移动分摊过去. 而减少一个master，就将它的hash slot移动到其他master. 
+
+
+
+**设定16384个槽位的原因:**
+
+作者在2015年5月在相关的 [issue#2576](https://github.com/antirez/redis/issues/2576) 上回答了
+
+<img src="img/image-20210518001831871.png" alt="image-20210518001831871" style="zoom:50%;" />
+
+```
+原因是：
+1. 正常的心跳包会携带着节点的完整配置，通过使用与旧的配置信息幂等的配置来更新旧配置。 这意味着它们需要包含原始形式的节点的插槽配置信息，使用16384个slots的话将会占用2k的空间，但是如果使用65536个slots的话将会占用8k空间。
+2. 同时，由于其他设计权衡，RedisCluster不太可能扩展到超过1000个Master节点。
+```
 
 
 
