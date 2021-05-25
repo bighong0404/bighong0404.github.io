@@ -14,7 +14,7 @@ redis cluster是支持N个master，每个master有多个slave读写分离的架�
 
 比如现在是3 master+3 slave,  这时候新增2个slave, 就有部分master挂了两个slave. 这个叫slave冗余.
 
-**多挂一些冗余slave冗余, 可以使得集群高可用性更强**.  当一个master的slave死了, 冗余的slave会自动迁移过去补充. 避免了slave死了, master也死了后没有备用slave顶上从而造成集群不高可用的场景. 
+**多挂一些slave冗余, 可以使得集群高可用性更强**.  当一个master的slave死了, 冗余的slave会自动迁移过去补充. 避免了slave死了, master也死了后没有备用slave顶上从而造成集群不高可用的场景. 
 
 
 
