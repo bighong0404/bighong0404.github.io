@@ -14,6 +14,10 @@
 
 
 
+![image-20210529212712840](img/image-20210529212712840.png)
+
+
+
 # 2. redis replication的核心原理
 
 ​		当启动一个slave node的时候，它会发送一个PSYNC命令给master node
