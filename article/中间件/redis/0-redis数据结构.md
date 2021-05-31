@@ -1,3 +1,9 @@
+
+
+![img](img/5341773-a55061d59df484f9.jpg)
+
+
+
 # 1. 简答动态字符串 SDS(Simple Dynamic String)
 
 ## 1.1 sds数据结构
@@ -294,17 +300,132 @@ Redis通过执行rehash操作来完成扩展和收缩哈希表，执行步骤如
 
 
 
-# 4. 跳表
+# 4. 跳表(skip list)
+
+- 跳跃表支持平均O（logN）、最坏O（N）复杂度的节点查找
+- 跳跃表的效率可以和平衡树相媲美
+- Redis只在两个地方用到了跳跃表，一个是实现有序集合键，另一个是在集群节点中用作内部数据结构
 
 
 
+## 4.1 数据结构
+
+```c
+# redis.h/zskiplistNode
+typedef struct zskiplistNode {
+    // 层
+    struct zskiplistLevel {
+        // 前进指针, 用于访问位于表尾方向的其他节点
+        struct zskiplistNode *forward;
+        // 跨度, 记录前进指针所指向节点和当前节点的距离
+        unsigned int span;
+    } level[];
+    // 后退指针, 指向前一个节点
+    struct zskiplistNode *backward;
+    // double类型分值
+    double score;
+    // 数据对象
+    robj *obj;
+} zskiplistNode;
+
+# redis.h/zskiplist
+typedef struct zskiplist {
+    // 表头节点和表尾节点
+    structz skiplistNode *header, *tail;
+    // 表中节点的数量（表头节点不算）
+    unsigned long length;
+    // 表中层数最大的节点的层数（表头节点的层数不算）
+    int level;
+} zskiplist;
+```
 
 
 
+## 4.2 redis跳表与普通跳表差异
+
+**普通跳表**
+
+![preview](img/v2-e5efbba6181b40a8468cebc7f99e69d3_r.jpg)
+
+
+
+**redis跳表**
+
+![image-20210531235901316](img/image-20210531235901316.png)
+
+
+
+- redis跳表的level是数组, 而普通跳表是通过冗余节点来表示
+- 也由于redis跳表node通过数组来表示level, 因此没有普通跳表node的down指针.
+- redis跳表是双向链表, 因为有bw(backward)指针
+- redis跳表node的层高都是1至32之间的随机数。
 
 
 
 # 5. 整数集合
+
+整数集合（intset）是集合键的底层实现之一，当一个集合只包含整数值元素，并且这个集合的元素数量不多时，Redis就会使用整数集合作为集合键的底层实现。
+
+## 5.1 数据结构
+
+```c
+# intset.h/intset
+
+typedef struct intset {
+    // 编码方式
+    uint32_t encoding;
+    // 集合包含的元素数量
+    uint32_t length;
+    // 保存元素的数组, 小到大有序地排列，并且元素不重复
+    int8_t contents[];
+} intset;
+```
+
+- 虽然contents声明为int8_t类型的数组，但实际上contents数组的真正类型取决于encoding属性的值
+  - encoding属性的值为`INTSET_ENC_INT16`，那么contents就是一个`int16_t`类型的数组
+  - encoding属性的值为`INTSET_ENC_INT32`，那么contents就是一个`int32_t`类型的数组
+  - encoding属性的值为`INTSET_ENC_INT64`，那么contents就是一个`int64_t`类型的数组
+
+## 5.2 升级
+
+当有新元素添加，并且新元素的类型比现有所有元素的类型都要长时，整数集合需要先进行升级（upgrade）.
+
+
+
+类型长度的判断是根据数值来判断: 
+
+- **int16_t**: [-32768，32767]
+- **int32_t**: [-2147483648，2147483647]
+- **int64_t**: [-9223372036854775808，9223372036854775807]
+
+
+
+升级过程:
+
+1. **拓展**: 根据新元素的类型，扩展整数集合底层contents数组的空间大小，并为新元素分配空间。
+
+2. **转换**: 将contents数组现有元素都转换成与新元素相同的类型，并将类型转换后的元素根据原顺序从后往前重新放置到正确的索引位/空间上。
+
+3. **添加**: 添加新元素到底层数组里面. 因为引发升级的新元素的长度总是比整数集合现有所有元素的长度都大，所以这个新元素的值(`有符号`)要么就大于所有现有元素，要么就小于所有现有元素。
+   - 在新元素小于所有现有元素的情况下，新元素会被放置在底层数组的最开头（索引0）；
+   - 在新元素大于所有现有元素的情况下，新元素会被放置在底层数组的最末尾（索引length-1）。
+
+
+
+>  向整数集合添加新元素的时间复杂度为O（N）。
+
+
+
+升级的好处: 
+
+- 一个是提升整数集合的灵活性。
+  - 整数集合可以通过自动升级底层数适应新元素，所以我们可以随意地将int16_t、int32_t或者int64_t类型的整数添加到集合中，而不必担心出现类型错误，这种做法非常灵活。
+- 另一个是尽可能地节约内存。
+  - 集合能同时保存三种不同类型的值，又确保升级操作/拓展空间只会在有需要的时候进行，这可以尽量节省内存。
+
+
+
+**整数集合不支持降级操作，一旦对数组进行了升级，编码就会一直保持升级后的状态。**
 
 
 
