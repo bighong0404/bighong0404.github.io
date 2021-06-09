@@ -22,11 +22,28 @@ redis中的数据执行周期性(见conf配置的`SNAPSHOTTING说明`)的全量�
 
 
 
+#### 生成RDB文件命令: 
+
+- `SAVE`命令, 会阻塞Redis服务器进程, 服务器不能处理任何请求.
+- `BGSAVE`命令, 会派生出一个子进程去执行
+
+
+
 #### RDB持久化机制的工作流程
 
 (1) redis根据配置的多个检查点(`save xxx xxx`)去生成rdb快照文件
 (2) fork一个子进程出来, 子进程尝试将数据dump到临时的rdb快照文件中
 (3) 完成rdb快照文件的生成之后，就替换之前的旧的快照文件dump.rdb，每次生成一个新的快照，都会覆盖之前的老快照
+
+
+
+#### BGSAVE命令执行时的服务器状态
+
+- `BGSAVE`执行期间, 服务器会拒绝`SAVE`, `BGSAVE`的命令.
+
+- `BGSAVE`执行期间，`BGREWRITEAOF`命令会被延迟到`BGSAVE`命令执行完毕之后执行。
+
+- `BGREWRITEAOF`执行期间，服务器会拒绝`BGSAVE`的命令.
 
 
 
@@ -91,7 +108,7 @@ auto-aof-rewrite-min-size 64mb   # aof文件最小大小
 
 (1) 如果RDB在执行snapshotting操作，那么redis不会执行AOF rewrite; 如果redis再执行AOF rewrite，那么就不会执行RDB snapshotting
 (2) 如果RDB在执行snapshotting，此时用户执行BGREWRITEAOF命令，那么等RDB快照生成之后，才会去执行AOF rewrite
-(3) 同时有RDB snapshot文件和AOF日志文件，那么redis重启的时候，会优先使用AOF进行数据恢复，因为其中的日志更完整
+(3) 同时有RDB snapshot文件和AOF日志文件，那么redis重启的时候，会**优先使用AOF进行数据恢复**，因为其中的日志更完整
 (4) 如果想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。
 
 
