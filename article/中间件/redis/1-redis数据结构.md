@@ -15,6 +15,12 @@ struct sdshdr {
 };
 ```
 
+>  SDS最大长度是512MB. 
+
+
+
+<img src="img/image-20210614004537426.png" alt="image-20210614004537426" style="zoom:50%;" />
+
 
 
 ## 1.2 len属性
