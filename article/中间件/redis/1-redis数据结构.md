@@ -1,9 +1,3 @@
-
-
-![img](img/5341773-a55061d59df484f9.jpg)
-
-
-
 # 1. 简答动态字符串 SDS(Simple Dynamic String)
 
 ## 1.1 sds数据结构
@@ -20,6 +14,12 @@ struct sdshdr {
     char buf[];
 };
 ```
+
+>  SDS最大长度是512MB. 
+
+
+
+<img src="img/image-20210614004537426.png" alt="image-20210614004537426" style="zoom:50%;" />
 
 
 
@@ -778,12 +778,23 @@ typedef struct zset {
 
 
 
+## 7.7 总结图
+
+![redis对象实现](img/redis对象实现.png)
+
+
+
+
+
 # 8. 常用查看命令
 
 | 命令                  | 功能                |
 | --------------------- | ------------------- |
 | TYPE <key>            | 查看key值的对象类型 |
 | OBJECT ENCODING <key> | 查看key值的编码     |
+| OBJECT REFCOUNT <key> | 查看key值的引用计数 |
+| OBJECT IDLETIME <key> | 查看key值的空转时间 |
+|                       |                     |
 
 
 
@@ -822,4 +833,74 @@ robj *s = createStringObject(...)
 // 导致对象s被释放
 decrRefCount(s)
 ```
+
+
+
+# 10. 对象共享
+
+redis对象的引用计数属性, 还有对象共享的作用.
+
+在Redis中，让多个键共享同一个值对象需要执行以下两个步骤：
+
+1）将数据库键的值**指针指向一个现有的值对象**；
+
+2）将被共享的值对象的**引用计数增一**。
+
+
+
+Redis会在**初始化**服务器时，创建一万个字符串对象用于共享，这些对象包含了**从0到9999的所有整数值**. 
+
+典型的**享元模式**.
+
+
+
+> Redis只对**整数值**的字符串对象进行共享, 而不共享其他类型对象的原因. 
+>
+> 要判断**共享对象**与要创建的目标对象完全相同, 才能共享.  不同类型的对象的比对复杂度不一样:
+>
+> - 如果共享对象是整数值的字符串对象，那么验证操作的复杂度为O（1）；
+>
+> - 如果共享对象是非整数值的字符串对象，那么验证操作的复杂度为O（N）；
+>
+> - 如果共享对象是包含了多个值（或者对象的）对象，比如列表对象或者哈希对象，那么验证操作的复杂度将会是O（N^2 ）。
+>
+> 因此原因是: 比对复杂对象消耗过多cpu资源, 不划算.  因此**只共享验证操作复杂度为O(1)的整数值字符串对象**. 
+
+
+
+# 11. 对象的空转时长
+
+ redisObject结构包含的最后一个属性为`lru`属性，该属性记录了对象最后一次被命令程序访问的时间. 
+
+```c
+typedef struct redisObject {
+    // 类型
+    unsigned type:4;
+    // 编码
+    unsigned encoding:4;
+    // 指向底层实现数据结构的指针
+    void *ptr;
+  
+    // ...其他属性
+  	// 当内存超限时采用LRU算法清除内存中的对象
+  	unsigned lru:REDIS_LRU_BITS; /* lru time (relative to server.lruclock) */
+  	// 引用计数
+    int refcount;
+} robj;
+```
+
+
+
+`OBJECT IDLETIME <key>`命令可以打印出给定键的空转**秒数**，这一空转时长就是通过将**当前时间减去键的值对象的lru时间**计算得出.
+
+```shell
+redis> OBJECT idletime num2
+(integer) 106
+```
+
+
+
+键的空转时长还有另外一项作用：如果服务器打开了`maxmemory`选项，并且服务器用于回收内存的算法为volatile-lru或者allkeys-lru，那么当服务器占用的内存数超过了maxmemory选项所设置的上限值时，**空转时长较高的那部分键会优先被服务器释放**，从而回收内存。
+
+配置文件的`maxmemory`选项和`maxmemory-policy`选项的说明介绍了关于这方面的更多信息。
 
