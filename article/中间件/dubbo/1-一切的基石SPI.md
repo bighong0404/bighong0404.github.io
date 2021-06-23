@@ -1,4 +1,4 @@
-# Java SPI
+# 一. Java SPI
 
 [SPI]: https://www.jianshu.com/p/3a3edbcd8f24
 
@@ -194,7 +194,7 @@ private class LazyIterator implements Iterator<S>{
 
 
 
-# Dubbo SPI
+# 二. Dubbo SPI
 
 Dubbo SPI比Java SPI的优势:
 
@@ -209,13 +209,7 @@ Dubbo SPI比Java SPI的优势:
 
 
 
-## 1. 别名缓存的实现
-
-
-
-
-
-## 2. AOP实现
+## 1. AOP实现
 
 通过包装Wrapper类实现, Wrapper类需要定义的带参构造方法. 
 
@@ -224,10 +218,28 @@ dubbo在实现类实例instant完成自动注入完成后,  instant作为Wrapper
 
 
 
-## 3. IOC实现
+```java
+// 初始化完成后, wrapper类都会缓存在这里
+private Set<Class<?>> cachedWrapperClasses;
+```
+
+
+
+
+
+## 2. IOC实现
 
 略复杂... 看图吧. 
 
 ### 实现原理
 
 ![SPI以及依赖注入流程图](img/SPI以及依赖注入流程图.png)
+
+
+
+
+
+
+
+
+
