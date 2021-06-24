@@ -194,7 +194,7 @@ private class LazyIterator implements Iterator<S>{
 
 
 
-# 二. Dubbo SPI
+# 二. Dubbo(2.7.0) SPI
 
 Dubbo SPI比Java SPI的优势:
 
@@ -205,33 +205,277 @@ Dubbo SPI比Java SPI的优势:
 
 
 
+## 源码解析
+
+```java
+// 获取指定拓展接口的加载器
+ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
+// 加载器加载指定拓展实现类
+Car benz = extensionLoader.getExtension("benz");
+```
+
+dubbo几乎所有的拓展功能, 都是离不开这两行代码. 
+
+
+
 > 核心类: `ExtentionLoader.java`
 
+**先看`ExtensionLoader`的属性**
+
+```java
+// 三个拓展点路径, META-INF/services/是JDK SPI默认路径
+private static final String SERVICES_DIRECTORY = "META-INF/services/";
+private static final String DUBBO_DIRECTORY = "META-INF/dubbo/";
+private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
+
+private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
+
+// 缓存ExtensionLoader，每个接口对应一个ExtensionLoader
+private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
+// 实现类对应的实例
+private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
+
+// ==============================
+// 拓展点加载器所属的接口类
+private final Class<?> type;
+// 创建接口实现类的工厂实例
+private final ExtensionFactory objectFactory;
+// 缓存实现类-别名的映射
+private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
+// 缓存别名-实现类的映射
+private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
+// 缓存别名-@Activate的实现类
+private final Map<String, Object> cachedActivates = new ConcurrentHashMap<String, Object>();
+// 缓存实现类实例， 别名-持有实例的holder
+private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
+
+// 缓存自适应实例
+private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
+// 缓存@Adaptive的实现类, 只能有一个@Adaptive的实现类的实例
+private volatile Class<?> cachedAdaptiveClass = null;
+// 拓展点的默认实例别名
+private String cachedDefaultName;
+// 自适应相关异常
+private volatile Throwable createAdaptiveInstanceError;
+
+// 缓存wrapper类
+private Set<Class<?>> cachedWrapperClasses;
+```
 
 
-## 1. AOP实现
 
-通过包装Wrapper类实现, Wrapper类需要定义的带参构造方法. 
+### 1. 获取指定拓展接口的拓展点加载器
+
+```java
+public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
+    // 省略非核心代码... 
+
+    ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
+    if (loader == null) {
+        // 一个ExtensionLoader实例维护一个接口的所有spi实现信息, 包括实现类, wrapper类等等
+        // new ExtensionLoader<T>(type) 创建拓展点加载器
+        EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader<T>(type) 创建拓展点加载器);
+        loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
+    }
+    return loader;
+}
+```
 
 
-dubbo在实现类实例instant完成自动注入完成后,  instant作为Wrapper类构造方法的入参,  创建出wrapper实例, 再执行一边自动注入后, 覆盖原instant写入缓存. 
+
+通过以下代码看得出来,  `ExtensionFactory.class`的拓展点实现类最先创建. 
+
+`ExtensionFactory.class`是所有拓展点的工厂类接口,  所有的拓展点都是通过`ExtensionFactory.class`的实现类来创建的. 	
+
+```java
+private ExtensionLoader(Class<?> type) {
+    this.type = type;
+ 	// 通过ExtensionFactory的接口的拓展点加载器,  获取@Adaptive, 自适应实现类
+    // ExtensionFactory的自适应拓展点实现类是AdaptiveExtensionFactory
+    objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+}
+```
+
+
+
+`META-INF/dubbo/internal/org.apache.dubbo.common.extension.ExtensionFactory`配置两个实现类, 而`AdaptiveExtensionFactory`注解了`Adaptive`. 因此所有拓展点实现类都是由`AdaptiveExtensionFactory`工厂创建
+
+```properties
+adaptive=org.apache.dubbo.common.extension.factory.AdaptiveExtensionFactory
+spi=org.apache.dubbo.common.extension.factory.SpiExtensionFactory
+```
+
+![image-20210624220915181](img/image-20210624220915181.png)
+
+
 
 
 
 ```java
-// 初始化完成后, wrapper类都会缓存在这里
-private Set<Class<?>> cachedWrapperClasses;
+// 获取自适应拓展点实例
+public T getAdaptiveExtension() {
+    // 一个接口只能有一个Adaptive实现
+    Object instance = cachedAdaptiveInstance.get();
+    if (instance == null) {
+        if (createAdaptiveInstanceError == null) {
+            synchronized (cachedAdaptiveInstance) {
+                instance = cachedAdaptiveInstance.get();
+                if (instance == null) {
+                    try {
+                        // 创建
+                        instance = createAdaptiveExtension();
+                        // 缓存自适应实例到holder中
+                        cachedAdaptiveInstance.set(instance);
+                    } catch (Throwable t) {
+                        createAdaptiveInstanceError = t;
+                        throw new IllegalStateException("fail to create adaptive instance: " + t.toString(), t);
+                    }
+                }
+            }
+        } else {
+            throw new IllegalStateException("fail to create adaptive instance: " + createAdaptiveInstanceError.toString(), createAdaptiveInstanceError);
+        }
+    }
+
+    return (T) instance;
+}
+```
+
+
+
+```java
+// 创建自适应实例
+private T createAdaptiveExtension() {
+    try {
+        // 获取@Adaptive的实现类, 并同构构造方法创建实例
+        // injectExtension(instant) 把创建的实例去执行 依赖注入
+        return injectExtension( (T) getAdaptiveExtensionClass().newInstance() );
+    } catch (Exception e) {
+        throw new IllegalStateException("Can not create adaptive extension " + type + ", cause: " + e.getMessage(), e);
+    }
+}
+```
+
+
+
+#### 1.1 获取Adaptive类
+
+```java
+// 获取Adaptive类
+private Class<?> getAdaptiveExtensionClass() {
+    // ★ 这一行巨重要, 里面的功能主要是从所有SPI路径的文件里获取所有type接口的所有实现类并缓存, 相当于做了初始化事情
+    getExtensionClasses();
+	// 如果一个接口有@Adaptive的实现类就直接用，如果没有就默认实现一个
+    // cachedAdaptiveClass的赋值是在初始化(new ExtensionLoader<T>(type) -> getExtensionClasses())的时候做的
+    if (cachedAdaptiveClass != null) {
+        return cachedAdaptiveClass;
+    }
+    // 没有@Adaptive的类, 则使用javassist创建一个type接口的动态代理类,
+    // 有@Adaptive的方法才会代理，没有注解的方法\使用代理类调用时, 抛nsupportOperation
+    return cachedAdaptiveClass = createAdaptiveExtensionClass();
+}
+
+private Class<?> createAdaptiveExtensionClass() {
+    String code = createAdaptiveExtensionClassCode();
+    ClassLoader classLoader = findClassLoader();
+    org.apache.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
+    return compiler.compile(code, classLoader);
+}
+
+/**
+ * ★hyc 动态代理类代码拼装
+ *   - 接口有@Adaptive的方法才会代理.
+ *      - 方法参数要求: 一个参数是URL, 或者其中一个参数有返回值是URL的方法. 否则抛异常
+ *          - 从URL参数中解析出@Adaptive配置的key对应的value值. 获取别名是value值的实例, 付给
+ *      - 方法参数有Invocation对象的其他操作
+ *
+ *   - 没有注解的方法使用代理类调用时, 抛UnsupportOperation异常
+ */
+private String createAdaptiveExtensionClassCode() {
+    // 拼接自适应动态代理类的string代码.. 非常长
+}
+```
+
+
+
+#### 1.2 非常重要的getExtensionClasses(). 
+
+```java
+// 从所有文件里获取所有type接口的所有实现类并缓存
+private Map<String, Class<?>> getExtensionClasses() {
+    Map<String, Class<?>> classes = cachedClasses.get();
+    if (classes == null) {
+        synchronized (cachedClasses) {
+            classes = cachedClasses.get();
+            if (classes == null) {
+                // 没缓存, 则加载并解析
+                classes = loadExtensionClasses();
+                cachedClasses.set(classes);
+            }
+        }
+    }
+    return classes;
+}
+
+// synchronized in getExtensionClasses
+// ★ 从所有文件里获取所有type接口的所有实现类并缓存, 可以说是整个ExtensionLoader<type>实例要使用之前的准备工作.
+private Map<String, Class<?>> loadExtensionClasses() {
+    // 要求拓展点接口都要@SPI. 
+    final SPI defaultAnnotation = type.getAnnotation(SPI.class);
+    // SPI后面的值就是默认的实现的类，只能指定一个实现类
+    if (defaultAnnotation != null) {
+        String value = defaultAnnotation.value();
+        if ((value = value.trim()).length() > 0) {
+            String[] names = NAME_SEPARATOR.split(value);
+            // 默认拓展实例只能指定一个
+            if (names.length > 1) {
+                throw new IllegalStateException("more than 1 default extension name on extension " + type.getName()
+                        + ": " + Arrays.toString(names));
+            }
+            if (names.length == 1) {
+                // 把默认实例的别名缓存起来
+                cachedDefaultName = names[0];
+            }
+        }
+    }
+
+    // 会从多个地方寻找接口的所有实现类，这就是扩展的实现
+    // 主要会从三个地方找，1. dubbo内部提供的
+    //      META-INF/dubbo/
+    //      META-INF/dubbo/internal/
+    //      META-INF/services/
+    // 别名 -> 实现类Class
+    Map<String, Class<?>> extensionClasses = new HashMap<String, Class<?>>();
+
+    /*
+     * 做三个的工作
+     * 1. 缓存注解了Adaptive的实现类, 并且只能有一个实现类@Adaptive
+     * 2. 用于AOP的Wrapper类缓存到ConcurrentHashSet中
+     * 3. 缓存其他的实现类以<别名->Class>到map中,
+     */
+    loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName());
+    loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));
+    loadDirectory(extensionClasses, DUBBO_DIRECTORY, type.getName());
+    loadDirectory(extensionClasses, DUBBO_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));
+    loadDirectory(extensionClasses, SERVICES_DIRECTORY, type.getName());
+    loadDirectory(extensionClasses, SERVICES_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));
+    return extensionClasses;
+}
 ```
 
 
 
 
 
-## 2. IOC实现
+### 2. 加载器加载指定拓展实现类
 
-略复杂... 看图吧. 
 
-### 实现原理
+
+
+
+
+
+## 过程图
 
 ![SPI以及依赖注入流程图](img/SPI以及依赖注入流程图.png)
 
