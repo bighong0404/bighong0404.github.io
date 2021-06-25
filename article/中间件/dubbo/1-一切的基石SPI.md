@@ -266,6 +266,8 @@ private Set<Class<?>> cachedWrapperClasses;
 
 ### 1. 获取指定拓展接口的拓展点加载器
 
+`ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);`
+
 ```java
 public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
     // 省略非核心代码... 
@@ -375,7 +377,9 @@ private Class<?> getAdaptiveExtensionClass() {
     return cachedAdaptiveClass = createAdaptiveExtensionClass();
 }
 
+// 生成动态代理类
 private Class<?> createAdaptiveExtensionClass() {
+    // 拼装动态代理类code
     String code = createAdaptiveExtensionClassCode();
     ClassLoader classLoader = findClassLoader();
     org.apache.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
@@ -386,7 +390,10 @@ private Class<?> createAdaptiveExtensionClass() {
  * ★hyc 动态代理类代码拼装
  *   - 接口有@Adaptive的方法才会代理.
  *      - 方法参数要求: 一个参数是URL, 或者其中一个参数有返回值是URL的方法. 否则抛异常
- *          - 从URL参数中解析出@Adaptive配置的key对应的value值. 获取别名是value值的实例, 付给
+ *          - 从URL参数中, 按照以下两个规则解析出的key对应的value值, 获取别名是value值的实例, 来执行当前代理方法
+ *              - 如果@Adaptive有配置value, 则以value值为key(支持多个value, 按照顺序优先级获取), 从参数URL获取对应的value值找到对应别名的实例
+ *              - 如果@Adaptive没有配置value, 则拿接口名作为key从URL获取value作为别名. eg: 接口Car.java, 那么key就是car, 接口CarInterface.java, 那么key是接口car.interface.
+ *          String extName = url.getParameter("car.interface");
  *      - 方法参数有Invocation对象的其他操作
  *
  *   - 没有注解的方法使用代理类调用时, 抛UnsupportOperation异常
@@ -398,7 +405,35 @@ private String createAdaptiveExtensionClassCode() {
 
 
 
-#### 1.2 非常重要的getExtensionClasses(). 
+以下是生成的动态代理类反编译来的.  关注框出来的几行代码就懂了.
+
+```java
+package com.bearo.dubbo_spi.api;
+import org.apache.dubbo.common.extension.ExtensionLoader;
+public class Car$Adaptive implements Car {
+    public void getColorForUrl(org.apache.dubbo.common.URL arg0) {
+        if (arg0 == null) throw new IllegalArgumentException("url == null");
+        org.apache.dubbo.common.URL url = arg0;
+        // ==============================================
+        String extName = url.getParameter("car");
+        if (extName == null)
+            throw new IllegalStateException("Fail to get extension(com.bearo.dubbo_spi.api.Car) name from url(" + url.toString() + ") use keys([car])");
+        Car extension = (Car) ExtensionLoader.getExtensionLoader(Car.class).getExtension(extName);
+        extension.getColorForUrl(arg0);
+        // ==============================================
+    }
+
+    public void getColor() {
+        throw new UnsupportedOperationException("method public abstract void com.bearo.dubbo_spi.api.Car.getColor() of interface com.bearo.dubbo_spi.api.Car is not adaptive method!");
+    }
+}
+```
+
+
+
+
+
+#### 1.2 非常重要的getExtensionClasses()
 
 ```java
 // 从所有文件里获取所有type接口的所有实现类并缓存
@@ -448,10 +483,11 @@ private Map<String, Class<?>> loadExtensionClasses() {
     Map<String, Class<?>> extensionClasses = new HashMap<String, Class<?>>();
 
     /*
-     * 做三个的工作
-     * 1. 缓存注解了Adaptive的实现类, 并且只能有一个实现类@Adaptive
+     * 做四个相当于初始化的工作
+     * 1. 缓存@注解Adaptive的自适应实现类, 并且只能有一个实现类@Adaptive
      * 2. 用于AOP的Wrapper类缓存到ConcurrentHashSet中
-     * 3. 缓存其他的实现类以<别名->Class>到map中,
+     * 3. 缓存@Active的类到cachedActivates中
+     * 4. 缓存其他的实现类以<别名->Class>到map中
      */
     loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName());
     loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));
@@ -465,17 +501,171 @@ private Map<String, Class<?>> loadExtensionClasses() {
 
 
 
-
-
 ### 2. 加载器加载指定拓展实现类
 
+`Car benz = extensionLoader.getExtension("benz");`
+
+```java
+/**
+ * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
+ * will be thrown.
+ * 每个接口对应一个ExtensionLoader，这个方法是根据名字找具体的实现类
+ */
+@SuppressWarnings("unchecked")
+public T getExtension(String name) {
+    if (StringUtils.isEmpty(name)) {
+        throw new IllegalArgumentException("Extension name == null");
+    }
+    if ("true".equals(name)) {
+        return getDefaultExtension();
+    }
+    Holder<Object> holder = cachedInstances.get(name);
+    if (holder == null) {
+        cachedInstances.putIfAbsent(name, new Holder<Object>());
+        holder = cachedInstances.get(name);
+    }
+    Object instance = holder.get();
+    if (instance == null) {
+        synchronized (holder) {
+            instance = holder.get();
+            if (instance == null) {
+                // 根据配置的实现类的别名, 获取实例
+                instance = createExtension(name);
+                holder.set(instance);
+            }
+        }
+    }
+    return (T) instance;
+}
+```
+
+
+
+#### 2.1 创建拓展实例, 这段代码通过构造方法创建实例,  并执行以来注入, 最后AOP. 
+
+```java
+private T createExtension(String name) {
+    // 从所有文件里获取所有type接口的所有实现类并缓存
+    // 然后取出对应实现类
+    Class<?> clazz = getExtensionClasses().get(name); // 取出对应的实现类
+    if (clazz == null) {
+        throw findException(name);
+    }
+    try {
+        // 生成实例并缓存
+        T instance = (T) EXTENSION_INSTANCES.get(clazz);
+        if (instance == null) {
+            // 通过构造方法创建实例, 并缓存
+            EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
+            instance = (T) EXTENSION_INSTANCES.get(clazz);
+        }
+
+        // ★hyc Ioc依赖注入, 只对setXXX的方法进行注入
+        injectExtension(instance);
+
+        Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+        if (CollectionUtils.isNotEmpty(wrapperClasses)) {
+            for (Class<?> wrapperClass : wrapperClasses) {
+                /*
+                  ★hyc 这里是aop的实现
+                  把instant实例作为wrapper类的带参构造方法的参数, 创建wrapper实例,
+                  wrapper实例执行一次依赖注入后, 把wrapper实例覆盖回给instant
+                 */
+                instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
+            }
+        }
+        return instance;
+    } catch (Throwable t) {
+        throw new IllegalStateException("Extension instance(name: " + name + ", class: " +
+                                        type + ")  could not be instantiated: " + t.getMessage(), t);
+    }
+}
+```
+
+
+
+#### 2.2 依赖注入实现
+
+```java
+/**
+ * <<依赖注入>>
+ *
+ * 对实例的public setXXX(1个参数)的方法执行注入
+ * 被注入的实例, 是自适应实例.
+ *   - 有实例@Adaptive这说明是自适应实例, 用于所有set方法的注入
+ *   - 没有自适应实例, 则使用javassist创建一个type接口的动态代理类,
+ *        - 接口有@Adaptive的方法才会代理. 方法参数要求: 一个参数是URL, 或者其中一个参数有返回值是URL的方法. 否则抛异常
+ *        - 没有注解的方法使用代理类调用时, 抛UnsupportOperation异常
+ *
+ *   - 如果type接口也没有方法@Adaptive, 则抛IllegalStateException异常
+ */
+private T injectExtension(T instance) {
+    try {
+        if (objectFactory != null) {
+            for (Method method : instance.getClass().getMethods()) {
+                // set开头的方法 && 有一个入参 && public的
+                if (method.getName().startsWith("set")
+                        && method.getParameterTypes().length == 1
+                        && Modifier.isPublic(method.getModifiers())) {
+                    /**
+                     * Check {@link DisableInject} to see if we need auto injection for this property
+                     */
+                    if (method.getAnnotation(DisableInject.class) != null) {
+                        continue;
+                    }
+                    Class<?> pt = method.getParameterTypes()[0];
+                    if (ReflectUtils.isPrimitives(pt)) {
+                        continue;
+                    }
+                    try {
+                        String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
+                        // 如果在spring容器中已经存在了一个对象就会直接去容器中的对象
+                        // 如果没有，则会使用SpiExtensionFactory来获取对象，这个时候，property没有使用到，会直接根据pt来生成Adaptive类并且构造实例，也就是dubbo的代理对象
+                        Object object = objectFactory.getExtension(pt, property);
+                        if (object != null) {
+                            method.invoke(instance, object); // set方法
+                        }
+                    } catch (Exception e) {
+                        logger.error("fail to inject via method " + method.getName()
+                                + " of interface " + type.getName() + ": " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+    } catch (Exception e) {
+        logger.error(e.getMessage(), e);
+    }
+    return instance;
+}
+```
 
 
 
 
 
+#### 2.3 AOP实现
 
-## 过程图
+如果实现类有有入参为type类的带构造方法, 则这个实现类会作为AOP类使用. 
+
+关注`createExtension(String name)`代码中这几行.
+
+```java
+Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+if (CollectionUtils.isNotEmpty(wrapperClasses)) {
+    for (Class<?> wrapperClass : wrapperClasses) {
+        /*
+         ★hyc 这里是aop的实现
+         把instant实例作为wrapper类的带参构造方法的参数, 创建wrapper实例,
+         wrapper实例执行一次依赖注入后, 把wrapper实例覆盖回给instant
+        */
+        instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
+    }
+}
+```
+
+
+
+## 整体过程图
 
 ![SPI以及依赖注入流程图](img/SPI以及依赖注入流程图.png)
 
