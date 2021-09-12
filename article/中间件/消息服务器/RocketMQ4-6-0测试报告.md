@@ -8,6 +8,7 @@ CPU: Intel(R) Xeon(R) CPU E5-2609 v3 @ 1.90GHz, 12核
 网卡: I350 Gigabit 千兆网卡, 1000Mb/s = 125MB/s, 网络传输瓶颈是125MB/s
 
 ## 1.2 磁盘写瓶颈
+
 ```
 [root]# dd if=/dev/zero of=test.dd bs=1M count=20000
 20000+0 records in
