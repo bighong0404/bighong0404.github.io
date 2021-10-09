@@ -10,7 +10,7 @@
 
 - BASE_HEADER  头结点
 
-- head  指向 node(BASE_HEADER) 的顶层索引
+- head  指向 node(`BASE_HEADER, 普通Object`) 的顶层索引
 
 - Node 静态内部类
 
@@ -28,9 +28,13 @@
 
 get(key)  -> doGet(key) ，查询指定key对应的value
 
-- findPredecessor(key..) 查询指定key节点的前驱节点
+- 关键方法`findPredecessor(key, cmp) ` 
 
 ```java
+/**
+ * 查询返回小于当前key, 且带有索引节点的node
+ * 同时清理/出队被删除的node的index
+ */
 private Node<K,V> findPredecessor(Object key, Comparator<? super K> cmp) {
     if (key == null)
         throw new NullPointerException(); // don't postpone errors
@@ -289,10 +293,6 @@ private V doPut(K key, V value, boolean onlyIfAbsent) {
 
 
 
-
-
-
-
 ## 删除
 
 remove(k) -> doRemove(k ..)，删除指定key对应的元素
@@ -300,3 +300,58 @@ remove(k) -> doRemove(k ..)，删除指定key对应的元素
 1. 设置指定元素value为null
 2. 将指定node从node链表移除
 3. 将指定node的index节点 从 对应的 index 链表移除
+
+
+
+```java
+final V doRemove(Object key, Object value) {
+    if (key == null)
+        throw new NullPointerException();
+    Comparator<? super K> cmp = comparator;
+    outer: for (;;) {
+        for (Node<K,V> b = findPredecessor(key, cmp), n = b.next;;) {
+            Object v; int c;
+            if (n == null)
+                break outer;
+            Node<K,V> f = n.next;
+            if (n != b.next)                    // inconsistent read
+                break;
+            if ((v = n.value) == null) {        // n is deleted
+                n.helpDelete(b, f);
+                break;
+            }
+            if (b.value == null || v == n)      // b is deleted
+                break;
+            if ((c = cpr(cmp, key, n.key)) < 0)
+                break outer;
+            if (c > 0) {
+                b = n;
+                n = f;
+                continue;
+            }
+            // 命中, n就是要删除的key对应的node
+            if (value != null && !value.equals(v))
+                break outer;
+            // 把要删除的目标node的value设为null
+            if (!n.casValue(v, null))
+                break;
+            // appendMarker: 目标node的next替换为一个标记节点以表示删除(key=null, value=标记节点自己, next=f)
+            if (!n.appendMarker(f) || !b.casNext(n, f))
+                findNode(key);                  // retry via findNode
+            else {
+                // 有清除被删除node的索引功能
+                findPredecessor(key, cmp);      // clean index
+                if (head.right == null) {
+                    // head指向最高level的headIndex, head.right==null说明最高level只剩下当前这个headIndex节点. 
+                    // 因此执行level降级
+                    tryReduceLevel();
+                }
+            }
+            @SuppressWarnings("unchecked") V vv = (V)v;
+            return vv;
+        }
+    }
+    return null;
+}
+```
+
