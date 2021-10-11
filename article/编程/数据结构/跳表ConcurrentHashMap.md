@@ -20,7 +20,7 @@
 
 
 
-# 操作
+# 操作源码
 
 
 
@@ -354,4 +354,16 @@ final V doRemove(Object key, Object value) {
     return null;
 }
 ```
+
+
+
+# 与ConcurrentHashMap的对比
+
+
+
+- `ConcurrentHashMap`是无序的, 跳表是key有序的, 并且提供导航功能
+- `ConcurrentHashMap`允许初始化调整负载因子(默认0.75)
+  - 一个节点在Bucket中出现的概率是符合泊松分布的，使用0.75为负载因子，可以降低节点在某一个特定桶中出现的概率，降低了hash 冲突，也就降低了查询时间，同时也不会因为负载因子过小而导致hash表过大，占用过多的内存空间。
+- `ConcurrentSkipListMap`支持更高点并发.  
+  - 时间复杂度能稳定在log(N), 和线程数几乎无关。也就是说在数据量一定的情况下，并发的线程越多，`ConcurrentSkipListMap`越能体现出他的优势。
 
