@@ -116,6 +116,8 @@ public final class ServiceLoader<S> implements Iterable<S>
 
 ### 3、查找实现类
 
+`Iterator<CarInterface> iterator = serviceLoader.iterator();`
+
 查找实现类和创建实现类的过程，都在LazyIterator完成。当我们调用iterator.hasNext和iterator.next方法的时候，实际上调用的都是LazyIterator的相应方法。
 
 ```java
