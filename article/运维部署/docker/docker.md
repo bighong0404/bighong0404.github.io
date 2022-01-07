@@ -166,19 +166,20 @@ docker rmi $(docker images -q -f dangling=true)
 
 **OPTIONS**说明（常用）：有些是一个减号，有些是两个减号
 
---name=容器新名字       为容器指定一个名称；
--d:  detach, 后台运行容器并返回容器ID，也即启动守护式容器(后台运行)；
+- --name=容器新名字: 为容器指定一个名称；
+- -d:  detach, 后台运行容器并返回容器ID，也即启动守护式容器(后台运行)；
 
--i: interactive, 以交互模式运行容器，通常与 -t 同时使用；
--t: tty, 为容器重新分配一个伪输入终端，通常与 -i 同时使用；
-也即启动交互式容器(前台有伪终端，等待交互)；
-
--P: 随机端口映射，大写P
--p: 指定端口映射，小写p
+- -i: interactive, 以交互模式运行容器，通常与 -t 同时使用；
+- -t: tty, 为容器重新分配一个伪输入终端，通常与 -i 同时使用；
+  也即启动交互式容器(前台有伪终端，等待交互)；
+- -P: 随机端口映射，大写P
+- -p: 指定端口映射，小写p
 
 ![image-20220106140543396](img/image-20220106140543396.png)
 
 
+
+- --privileged=true:   默认false. 使用该参数，container内的root拥有真正的root权限。否则，container内的root只是外部的一个普通用户权限。privileged启动的容器，可以看到很多host上的设备，并且可以执行mount。甚至允许你在docker容器中启动docker容器。
 
 eg:
 
@@ -493,4 +494,19 @@ Status: Downloaded newer image for 192.168.1.139:5000/myubuntu:1.1
 # 容器数据卷
 
 
+
+
+
+-v  可以挂多组
+
+
+
+数据卷继承, 
+
+```shell
+# 启动容器u2, 数据卷继承u1
+docker run -it --privileged=true --volumes-from u1 --name u2 centos
+```
+
+当容器u1停止后, 容器u2依旧可以访问继承的数据卷.  因此`数据卷继承`仅仅是继承了数据卷的继承规则,  容器之间依旧是独享独立, 互不影响.
 
