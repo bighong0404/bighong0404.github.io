@@ -493,15 +493,24 @@ Status: Downloaded newer image for 192.168.1.139:5000/myubuntu:1.1
 
 # 容器数据卷
 
+将docker容器内的指定目录的内容映射并持久化到宿主机的磁盘的目录中.
 
 
 
+` docker run -it --privileged=true -v /宿主机绝对路径目录:/容器内目录:rw 镜像名`
 
--v  可以挂多组
+- -v  可以挂多组
+- 权限, rw(默认),   ro
 
 
 
-数据卷继承, 
+**注意事项**
+
+​	记得加`--privileged=true`, 能解决奇奇怪怪的权限问题
+
+
+
+**数据卷继承**
 
 ```shell
 # 启动容器u2, 数据卷继承u1
@@ -510,3 +519,148 @@ docker run -it --privileged=true --volumes-from u1 --name u2 centos
 
 当容器u1停止后, 容器u2依旧可以访问继承的数据卷.  因此`数据卷继承`仅仅是继承了数据卷的继承规则,  容器之间依旧是独享独立, 互不影响.
 
+
+
+
+
+# Dockerfile
+
+
+
+## Dockerfile说明
+
+Dockerfile是用来构建Docker镜像的文本文件，是由一条条构建镜像所需的指令和参数构成的脚本。
+
+Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括执行代码或者是文件、环境变量、依赖包、运行时环境、动态链接库、操作系统的发行版、服务进程和内核进程(当应用进程需要和系统服务和内核进程打交道，这时需要考虑如何设计namespace的权限控制)等等;
+
+<img src="img/image-20220121190854112.png" alt="image-20220121190854112" style="zoom:75%;" />
+
+
+
+**用Dockerfile编写镜像步骤**
+
+1. 编写Dockerfile文件
+2. docker build命令构建镜像
+3. docker run镜像运行容器实例
+
+
+
+**Dockerfile默认规则**:
+
+- 每条保留字指令都必须为**大写字母**且后面要跟随至少一个参数
+- 指令按照**从上到下，顺序执行**
+- #表示注释
+- 每条指令都会创建一个新的镜像层并对镜像进行提交
+
+
+
+**Docker执行Dockerfile的大致流程**
+
+1. docker从基础镜像运行一个容器
+2. 执行一条指令并对容器作出修改
+3. 执行类似docker commit的操作提交一个新的镜像层
+4. docker再基于刚提交的镜像运行一个新容器
+5. 执行dockerfile中的下一条指令直到所有指令都执行完成
+
+
+
+> 从应用软件的角度来看，Dockerfile、Docker镜像与Docker容器分别代表软件的三个不同阶段，
+>
+> * Dockerfile是软件的原材料
+>
+> * Docker镜像是软件的交付品
+>
+> * Docker容器则可以认为是软件镜像的运行态，也即依照镜像运行的容器实例
+>
+> Dockerfile面向开发，Docker镜像成为交付标准，Docker容器则涉及部署与运维，三者缺一不可，合力充当Docker体系的基石。
+
+
+
+## Dockerfile中的关键字
+
+
+
+Dockerfile内容可以参考tomcat8的dockerfile:  https://github.com/docker-library/tomcat/blob/master/8.5/jdk8/corretto/Dockerfile
+
+
+
+- **FROM**: 基础镜像，当前新镜像是基于哪个镜像的，指定一个已经存在的镜像作为模板，第一条必须是from
+
+- **MAINTAINER**:  镜像维护者的姓名和邮箱地址
+
+- **RUN**:  容器构建时需要运行的命令, RUN是在 docker build时运行. 
+
+  格式
+
+  - shell格式:  `RUN 命令行`,  等同于在终端执行shell命令.  例如`RUN yum -y install vim`
+  - exec格式:  `RUN ["可执行文件", "参数1", "参数2"]`. 例如`RUN ["./bin/server.sh", "start"] ` 等价于RUN shell命令 `RUN ./bin/server.sh start  `
+
+- **EXPOSE**:  当前容器对外暴露出的端口
+
+- **WORKDIR**:   指定在创建容器后，终端默认登陆的进来工作目录，一个落脚点
+
+- **USER**: 指定该镜像以什么样的用户去执行，如果都不指定，默认是root
+
+- **ENV**: 用来在构建镜像过程中设置环境变量
+
+  `ENV MY_PATH /usr/mytest`
+  这个环境变量可以在后续的任何RUN指令中使用，这就如同在命令前面指定了环境变量前缀一样；也可以在其它指令中直接使用这些环境变量，
+
+  比如：`WORKDIR $MY_PATH`
+
+- **ADD**:  将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包
+
+- **COPY**: 类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置.
+
+   格式: 
+
+  - COPY src dest
+  - COPY ["src", "dest"]
+    <src源路径>：源文件或者源目录
+    <dest目标路径>：容器内的指定路径，路径不存在的话，会自动创建。
+
+- **VOLUME**: 容器数据卷，用于数据保存和持久化工作
+
+- **CMD**: 指定容器启动后的要干的事情.. 
+
+  与**RUN命令**的区别是, **RUN是docker build(镜像构建)期间执行的, 而CMD是docker run(镜像启动)时候运行的**.
+
+  Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效. 另外, CMD 会被 docker run 之后的参数替换
+
+  例如: 
+
+  tomcat的dockerfile文件, 最后一行是CMD命令`CMD ["catalina.sh", "run"]`.  
+
+  我们执行`docker run -it -p 8080:8080 tomcat:8.0.53 /bin/bash`, 命令行参数是`/bin/bash`. 相当于追加了`CMD /bin/bash`. 
+
+  这回覆盖了官方原Dockerfile文件的`CMD ["catalina.sh", "run"]`. 因此我们这个命令是无法启动tomcat的. 
+  
+- **ENTRYPOINT**: 也是用来指定一个容器启动时要运行的命令, 类似于 CMD 指令，但是**ENTRYPOINT不会被docker run后面的命令覆盖**，
+   而且这些**命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序**.
+
+   格式:  `ENTRYPOINT ["可执行命令", "参数", "参数", ...]`
+
+   `ENTRYPOINT`可以和`CMD`一起用，**一般是变参才会使用 CMD** ，**这里的 CMD 等于是在给 ENTRYPOINT 传参**。
+   当指定了ENTRYPOINT后，CMD的含义就发生了变化，不再是直接运行其命令**而是将CMD的内容作为参数传递给ENTRYPOINT指令**，他两个组合会变成`ENTRYPOINT "<CMD>" `
+
+   
+
+   举例：
+
+   假设已通过 Dockerfile 构建了 nginx:test 镜像
+
+   ```
+   FROM nginx
+   
+   ENTRYPOINT ["nginx", "-c"]  # -c是定参
+   CMD ["/etc/nginx/6379.conf"]
+   ```
+
+   等价于` nginx -c  /etc/nginx/6379.conf`
+
+   | 是否传参   | 按照dockerfile编写执行         | 传参运行                                      |
+   | ---------- | ------------------------------ | --------------------------------------------- |
+   | Docker命令 | docker run  nginx:test         | docker run  nginx:test -c /etc/nginx/new.conf |
+   | 实际命令   | nginx -c /etc/nginx/nginx.conf | nginx -c /etc/nginx/new.conf                  |
+
+   

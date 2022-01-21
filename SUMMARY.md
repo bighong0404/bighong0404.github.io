@@ -80,14 +80,14 @@
     -  [极客时间-11-分布式数据库的选择](article/设计/DDD/极客时间-11-分布式数据库的选择.md) 
   
 ---
-  
+
 ### linux
-  
+
   - [Linux的进程、线程、文件描述符](article/linux/Linux的进程、线程、文件描述符是什么.md)
     - [Linux系统中的Page-cache和Buffer-cach](article/linux/Linux系统中的Page-cache和Buffer-cache.md)
-  
-  ---
-  
+
+---
+
   ### 其他基础
 
   - [卓有成效的管理者-Peter F Drucker](article/其他基础/卓有成效的管理者-Peter.F.Drucker.md)
@@ -95,8 +95,8 @@
   - [正则表达式的语法](article/其他基础/正则表达式的语法.md)
   - [UML概念](article/其他基础/UML概念.md)
   - [CAP与BASE理论](article/其他基础/CAP与BASE理论.md) 
-  
-  ---
+
+---
 
 
   ### 工作总结
