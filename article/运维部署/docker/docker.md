@@ -129,11 +129,11 @@ docker rmi [镜像id]
 
 **docker虚悬镜像是什么？**
 
-虚悬镜像（dangling image）: 仓库名、标签均为<none>的镜像.
+虚悬镜像（`dangling image`）: 仓库名、标签均为<none>的镜像.
 
 这个镜像原本是有镜像名和标签的，原来为 mongo:3.2 ，随着官方镜像维护，发布了新版本后，重新docker pull mongo:3.2时， mongo:3.2 这个镜像名被 转移到了新下载的镜像身上，而旧的镜像上的这个名称则被取消，从而成为了 。
 
-除了 docker pull 可能导致这种情况， docker build 也同样可以导致这种现象。由于新旧镜像同名，旧镜像名称被取消，从而出现仓库名、标签均为<none>的镜像。
+除了 docker pull 可能导致这种情况， docker build 也同样可以导致这种现象。由于新旧镜像同名同tag，旧镜像名称被取消，从而出现仓库名、标签均为<none>的镜像。
 
 
 
@@ -146,11 +146,8 @@ docker rmi [镜像id]
 docker images -f dangling=true
 # 删除虚悬镜像
 docker rmi $(docker images -q -f dangling=true)
+docker image prune
 ```
-
-
-
-
 
 
 
@@ -539,13 +536,15 @@ Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括
 
 **用Dockerfile编写镜像步骤**
 
-1. 编写Dockerfile文件
+1. 编写Dockerfile文件, 名称必须是`Dockerfile`
 2. docker build命令构建镜像
 3. docker run镜像运行容器实例
 
 
 
 **Dockerfile默认规则**:
+
+- Dockerfile文件名, `D`一定要**大写**, 并且名称只能是Dockerfile
 
 - 每条保留字指令都必须为**大写字母**且后面要跟随至少一个参数
 - 指令按照**从上到下，顺序执行**
@@ -580,50 +579,64 @@ Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括
 
 
 
-Dockerfile内容可以参考tomcat8的dockerfile:  https://github.com/docker-library/tomcat/blob/master/8.5/jdk8/corretto/Dockerfile
+Dockerfile内容可以参考tomcat8的Dockerfile:  https://github.com/docker-library/tomcat/blob/master/8.5/jdk8/corretto/Dockerfile
 
 
 
-- **FROM**: 基础镜像，当前新镜像是基于哪个镜像的，指定一个已经存在的镜像作为模板，第一条必须是from
+- `FROM`: 基础镜像，当前新镜像是基于哪个镜像的，指定一个已经存在的镜像作为模板，第一条必须是from
 
-- **MAINTAINER**:  镜像维护者的姓名和邮箱地址
+- `MAINTAINER`:  镜像维护者的姓名和邮箱地址
 
-- **RUN**:  容器构建时需要运行的命令, RUN是在 docker build时运行. 
+- `RUN`:  容器构建时需要运行的命令, RUN是在 docker build时运行. 
 
   格式
 
   - shell格式:  `RUN 命令行`,  等同于在终端执行shell命令.  例如`RUN yum -y install vim`
   - exec格式:  `RUN ["可执行文件", "参数1", "参数2"]`. 例如`RUN ["./bin/server.sh", "start"] ` 等价于RUN shell命令 `RUN ./bin/server.sh start  `
 
-- **EXPOSE**:  当前容器对外暴露出的端口
+- `EXPOSE`:  当前容器对外暴露出的端口
 
-- **WORKDIR**:   指定在创建容器后，终端默认登陆的进来工作目录，一个落脚点
+- `WORKDIR`:   指定在创建容器后，终端默认登陆的进来工作目录，一个落脚点
 
-- **USER**: 指定该镜像以什么样的用户去执行，如果都不指定，默认是root
+- `USER`: 指定该镜像以什么样的用户去执行，如果都不指定，默认是root
 
-- **ENV**: 用来在构建镜像过程中设置环境变量
+- `ENV`: 用来在构建镜像过程中设置环境变量
+
+
+  这个环境变量可以在后续的任何RUN指令中使用，这就如同在命令前面指定了环境变量前缀一样；
+
+  比如: `ENV JAVA_HOME /usr/local/java/jdk1.8.0_171`
+
+  
+
+  也可以在其它指令中直接使用这些环境变量.
+
+  比如：
 
   `ENV MY_PATH /usr/mytest`
-  这个环境变量可以在后续的任何RUN指令中使用，这就如同在命令前面指定了环境变量前缀一样；也可以在其它指令中直接使用这些环境变量，
 
-  比如：`WORKDIR $MY_PATH`
+  `WORKDIR $MY_PATH`
 
-- **ADD**:  将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包
+- `ADD`:  将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包
 
-- **COPY**: 类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置.
+   格式:
+
+   - ADD `${Dockerfile路径}/xxxx` `{镜像系统内目标路径} `
+
+- `COPY`: 类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置.
 
    格式: 
 
-  - COPY src dest
-  - COPY ["src", "dest"]
+  - COPY `${src}` `${dest}`
+  - COPY ["`${src}`", "`${dest}`"]
     <src源路径>：源文件或者源目录
     <dest目标路径>：容器内的指定路径，路径不存在的话，会自动创建。
 
-- **VOLUME**: 容器数据卷，用于数据保存和持久化工作
+- `VOLUME`: 容器数据卷，用于数据保存和持久化工作
 
-- **CMD**: 指定容器启动后的要干的事情.. 
+- `CMD`: 指定容器启动后的要干的事情.. 
 
-  与**RUN命令**的区别是, **RUN是docker build(镜像构建)期间执行的, 而CMD是docker run(镜像启动)时候运行的**.
+  与`RUN`命令的区别是, **RUN是docker build(镜像构建)期间执行的, 而CMD是docker run(镜像启动)时候运行的**.
 
   Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效. 另外, CMD 会被 docker run 之后的参数替换
 
@@ -635,7 +648,7 @@ Dockerfile内容可以参考tomcat8的dockerfile:  https://github.com/docker-lib
 
   这回覆盖了官方原Dockerfile文件的`CMD ["catalina.sh", "run"]`. 因此我们这个命令是无法启动tomcat的. 
   
-- **ENTRYPOINT**: 也是用来指定一个容器启动时要运行的命令, 类似于 CMD 指令，但是**ENTRYPOINT不会被docker run后面的命令覆盖**，
+- `ENTRYPOINT`: 也是用来指定一个容器启动时要运行的命令, 类似于 CMD 指令，但是**ENTRYPOINT不会被docker run后面的命令覆盖**，
    而且这些**命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序**.
 
    格式:  `ENTRYPOINT ["可执行命令", "参数", "参数", ...]`
@@ -664,3 +677,348 @@ Dockerfile内容可以参考tomcat8的dockerfile:  https://github.com/docker-lib
    | 实际命令   | nginx -c /etc/nginx/nginx.conf | nginx -c /etc/nginx/new.conf                  |
 
    
+
+## 构造镜像命令
+
+
+
+**格式**
+
+`docker build -t ${镜像名}:${tag} ${dir}`
+
+**选项**
+
+- `-t` 给镜像加一个Tag
+- `ImageName` − 给镜像起的名称
+- `TagName` − 给镜像的Tag名
+- `Dir` − `Dockerfile`所在目录, `.`表示当前目录
+
+
+
+## 实例演示
+
+
+
+###  构建centos镜像, 内置vim, 支持ifconfig命令, 支持rzsz命令, 安装jdk8
+
+
+
+**Dockerfile内容**
+
+```dockerfile
+FROM centos
+
+MAINTAINER hyc<hyc@gmail.com>
+
+# 设置工作目录
+ENV WORKPATH /usr/local
+WORKDIR $WORKPATH
+
+# 安装vim
+RUN yum install -y vim
+# 安装rzsz
+RUN yum install -y lrzsz
+# 安装网络工具, 支持ifconfig
+RUN yum install -y net-tools
+# 安装jdk8
+RUN mkdir /usr/local/java
+ADD jdk-8u151-linux-x64.tar.gz /usr/local/java
+
+# jdk8环境变量
+ENV JAVA_HOME /usr/local/java/jdk1.8.0_151
+ENV PATH $PATH:$JAVA_HOME/bin:$JAVA_HOME/jre/bin
+ENV CLASSPATH $CLASSPATH:$JAVA_HOME/lib:$JAVA_HOME/jre/lib
+
+EXPOSE 80
+CMD echo $WORKPATH
+CMD echo "success--------------ok"
+CMD /bin/bash
+```
+
+
+
+`jdk-8u151-linux-x64.tar.gz`文件上传到与Dockerfile同一目录下
+
+```shell
+[root@test file]# ll
+total 185296
+-rw-r--r-- 1 root root       585 Jan 22 15:25 Dockerfile
+-rw-r--r-- 1 root root 189736377 Aug 14  2018 jdk-8u151-linux-x64.tar.gz
+```
+
+
+
+**构建**
+
+执行命令 `docker build -t centos-hyc:1.0 .`
+
+```shell
+[root@test file]# docker build -t centos-hyc:1.0 .
+Sending build context to Docker daemon  189.7MB
+Step 1/16 : FROM centos
+ ---> 5d0da3dc9764
+Step 2/16 : MAINTAINER hyc<hyc@gmail.com>
+ ---> Running in fc82c1232aeb
+Removing intermediate container fc82c1232aeb
+ ---> c43ab20317f8
+Step 3/16 : ENV WORKPATH /usr/local
+ ---> Running in c629bc428149
+Removing intermediate container c629bc428149
+ ---> 45d2549775b8
+Step 4/16 : WORKDIR $WORKPATH
+ ---> Running in 665db5633b94
+Removing intermediate container 665db5633b94
+ ---> 63904ec56e3b
+Step 5/16 : RUN yum install -y vim
+ ---> Running in bb9879856673
+CentOS Linux 8 - AppStream                      3.1 MB/s | 8.4 MB     00:02    
+CentOS Linux 8 - BaseOS                         2.1 MB/s | 4.6 MB     00:02    
+CentOS Linux 8 - Extras                         6.2 kB/s |  10 kB     00:01    
+Last metadata expiration check: 0:00:01 ago on Sat Jan 22 07:28:57 2022.
+Dependencies resolved.
+================================================================================
+ Package             Arch        Version                   Repository      Size
+================================================================================
+Installing:
+ vim-enhanced        x86_64      2:8.0.1763-16.el8         appstream      1.4 M
+Installing dependencies:
+ gpm-libs            x86_64      1.20.7-17.el8             appstream       39 k
+ vim-common          x86_64      2:8.0.1763-16.el8         appstream      6.3 M
+ vim-filesystem      noarch      2:8.0.1763-16.el8         appstream       49 k
+ which               x86_64      2.21-16.el8               baseos          49 k
+
+Transaction Summary
+================================================================================
+Install  5 Packages
+
+Total download size: 7.8 M
+Installed size: 30 M
+Downloading Packages:
+(1/5): gpm-libs-1.20.7-17.el8.x86_64.rpm        241 kB/s |  39 kB     00:00    
+(2/5): vim-filesystem-8.0.1763-16.el8.noarch.rp 535 kB/s |  49 kB     00:00    
+(3/5): which-2.21-16.el8.x86_64.rpm             208 kB/s |  49 kB     00:00    
+(4/5): vim-enhanced-8.0.1763-16.el8.x86_64.rpm  2.7 MB/s | 1.4 MB     00:00    
+(5/5): vim-common-8.0.1763-16.el8.x86_64.rpm    6.2 MB/s | 6.3 MB     00:01    
+--------------------------------------------------------------------------------
+Total                                           3.6 MB/s | 7.8 MB     00:02     
+warning: /var/cache/dnf/appstream-02e86d1c976ab532/packages/gpm-libs-1.20.7-17.el8.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 8483c65d: NOKEY
+CentOS Linux 8 - AppStream                      1.6 MB/s | 1.6 kB     00:00    
+Importing GPG key 0x8483C65D:
+ Userid     : "CentOS (CentOS Official Signing Key) <security@centos.org>"
+ Fingerprint: 99DB 70FA E1D7 CE22 7FB6 4882 05B5 55B3 8483 C65D
+ From       : /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+Key imported successfully
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : which-2.21-16.el8.x86_64                               1/5 
+  Installing       : vim-filesystem-2:8.0.1763-16.el8.noarch                2/5 
+  Installing       : vim-common-2:8.0.1763-16.el8.x86_64                    3/5 
+  Installing       : gpm-libs-1.20.7-17.el8.x86_64                          4/5 
+  Running scriptlet: gpm-libs-1.20.7-17.el8.x86_64                          4/5 
+  Installing       : vim-enhanced-2:8.0.1763-16.el8.x86_64                  5/5 
+  Running scriptlet: vim-enhanced-2:8.0.1763-16.el8.x86_64                  5/5 
+  Running scriptlet: vim-common-2:8.0.1763-16.el8.x86_64                    5/5 
+  Verifying        : gpm-libs-1.20.7-17.el8.x86_64                          1/5 
+  Verifying        : vim-common-2:8.0.1763-16.el8.x86_64                    2/5 
+  Verifying        : vim-enhanced-2:8.0.1763-16.el8.x86_64                  3/5 
+  Verifying        : vim-filesystem-2:8.0.1763-16.el8.noarch                4/5 
+  Verifying        : which-2.21-16.el8.x86_64                               5/5 
+
+Installed:
+  gpm-libs-1.20.7-17.el8.x86_64         vim-common-2:8.0.1763-16.el8.x86_64    
+  vim-enhanced-2:8.0.1763-16.el8.x86_64 vim-filesystem-2:8.0.1763-16.el8.noarch
+  which-2.21-16.el8.x86_64             
+
+Complete!
+Removing intermediate container bb9879856673
+ ---> 7a66f811b2ec
+Step 6/16 : RUN yum install -y lrzsz
+ ---> Running in 29f56b70dc44
+Last metadata expiration check: 0:00:13 ago on Sat Jan 22 07:28:57 2022.
+Dependencies resolved.
+================================================================================
+ Package        Architecture    Version                   Repository       Size
+================================================================================
+Installing:
+ lrzsz          x86_64          0.12.20-43.el8            baseos           84 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 84 k
+Installed size: 190 k
+Downloading Packages:
+lrzsz-0.12.20-43.el8.x86_64.rpm                 653 kB/s |  84 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           176 kB/s |  84 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : lrzsz-0.12.20-43.el8.x86_64                            1/1 
+  Running scriptlet: lrzsz-0.12.20-43.el8.x86_64                            1/1 
+  Verifying        : lrzsz-0.12.20-43.el8.x86_64                            1/1 
+
+Installed:
+  lrzsz-0.12.20-43.el8.x86_64                                                   
+
+Complete!
+Removing intermediate container 29f56b70dc44
+ ---> 206470d6aaa1
+Step 7/16 : RUN yum install -y net-tools
+ ---> Running in d9b91f701024
+Last metadata expiration check: 0:00:17 ago on Sat Jan 22 07:28:57 2022.
+Dependencies resolved.
+================================================================================
+ Package         Architecture Version                        Repository    Size
+================================================================================
+Installing:
+ net-tools       x86_64       2.0-0.52.20160912git.el8       baseos       322 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 322 k
+Installed size: 942 k
+Downloading Packages:
+net-tools-2.0-0.52.20160912git.el8.x86_64.rpm   1.7 MB/s | 322 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           540 kB/s | 322 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : net-tools-2.0-0.52.20160912git.el8.x86_64              1/1 
+  Running scriptlet: net-tools-2.0-0.52.20160912git.el8.x86_64              1/1 
+  Verifying        : net-tools-2.0-0.52.20160912git.el8.x86_64              1/1 
+
+Installed:
+  net-tools-2.0-0.52.20160912git.el8.x86_64                                     
+
+Complete!
+Removing intermediate container d9b91f701024
+ ---> 74bb90aa4931
+Step 8/16 : RUN mkdir /usr/local/java
+ ---> Running in e2a7d8d9a41b
+Removing intermediate container e2a7d8d9a41b
+ ---> e7c66e704c17
+Step 9/16 : ADD jdk-8u151-linux-x64.tar.gz /usr/local/java
+ ---> 1b5d64a4f52e
+Step 10/16 : ENV JAVA_HOME /usr/local/java/jdk1.8.0_151
+ ---> Running in 8ac7309bf41c
+Removing intermediate container 8ac7309bf41c
+ ---> 859eeee28ec1
+Step 11/16 : ENV PATH $PATH:$JAVA_HOME/bin:$JAVA_HOME/jre/bin
+ ---> Running in 67df6fe270c6
+Removing intermediate container 67df6fe270c6
+ ---> f86c8e2ae27b
+Step 12/16 : ENV CLASSPATH $CLASSPATH:$JAVA_HOME/lib:$JAVA_HOME/jre/lib
+ ---> Running in 2bee418ee3cd
+Removing intermediate container 2bee418ee3cd
+ ---> 526d0b02c8f8
+Step 13/16 : EXPOSE 80
+ ---> Running in da64cff3c93f
+Removing intermediate container da64cff3c93f
+ ---> 1afb0ab88f0c
+Step 14/16 : CMD echo $WORKPATH
+ ---> Running in 2e29cefb1713
+Removing intermediate container 2e29cefb1713
+ ---> 125ef66cb217
+Step 15/16 : CMD echo "success--------------ok"
+ ---> Running in dc7b270b89b9
+Removing intermediate container dc7b270b89b9
+ ---> 81eead8fa81a
+Step 16/16 : CMD /bin/bash
+ ---> Running in 35e817149030
+Removing intermediate container 35e817149030
+ ---> fedc451c0858
+Successfully built fedc451c0858
+Successfully tagged centos-hyc:1.0
+```
+
+
+
+**验证镜像**
+
+```shell
+[root@test file]# docker images
+REPOSITORY                                         TAG       IMAGE ID       CREATED              SIZE
+centos-hyc                                         1.0       fedc451c0858   About a minute ago   738MB
+redis                                              latest    7614ae9453d1   4 weeks ago          113MB
+hello-world                                        latest    feb5d9fea6a5   4 months ago         13.3kB
+centos                                             latest    5d0da3dc9764   4 months ago         231MB
+```
+
+
+
+###　构建java微服务
+
+
+
+**Dockerfile内容**
+
+```dockerfile
+FROM java:8
+MAINTAINER hyc<hyc@gmail.com>
+
+ADD docker-0.0.1.jar /boot.jar
+
+# bash 执行cmd: touch /boot.jar, boot.jar的创建时间和更新时间为当前时间
+# RUN bash -c 'touch /boot.jar'
+
+ENTRYPOINT ["java", "-jar", "/boot.jar"]
+
+EXPOSE 8080
+RUN echo "run successfully!"
+```
+
+
+
+`docker-0.0.1.jar`文件上传到与Dockerfile同一目录下
+
+
+
+**构建**
+
+执行命令 `docker build -t order-project:1.0 .`
+
+```bash
+[root@test springboot]# docker build -t order-project:1.0 .
+Sending build context to Docker daemon  17.56MB
+Step 1/6 : FROM centos-hyc:1.0
+ ---> fedc451c0858
+Step 2/6 : MAINTAINER hyc<hyc@gmail.com>
+ ---> Using cache
+ ---> a9f4475ebc69
+Step 3/6 : ADD docker-0.0.1-SNAPSHOT.jar /order-boot.jar
+ ---> Using cache
+ ---> 8027f5b613f2
+Step 4/6 : ENTRYPOINT ["java", "-jar", "/order-boot.jar"]
+ ---> Using cache
+ ---> ae0b8b2cb710
+Step 5/6 : EXPOSE 8080
+ ---> Using cache
+ ---> 861acb094163
+Step 6/6 : RUN echo "run successfully!"
+ ---> Using cache
+ ---> a6a40f3d6c09
+Successfully built a6a40f3d6c09
+Successfully tagged order-project:1.0
+```
+
+
+
+
+
+# Docker网络
+
