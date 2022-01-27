@@ -526,7 +526,7 @@ docker run -it --privileged=true --volumes-from u1 --name u2 centos
 
 ## Dockerfile说明
 
-Dockerfile是用来构建Docker镜像的文本文件，是由一条条构建镜像所需的指令和参数构成的脚本。
+`Dockerfile`是用来构建Docker镜像的文本文件，是由一条条构建镜像所需的指令和参数构成的脚本。
 
 Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括执行代码或者是文件、环境变量、依赖包、运行时环境、动态链接库、操作系统的发行版、服务进程和内核进程(当应用进程需要和系统服务和内核进程打交道，这时需要考虑如何设计namespace的权限控制)等等;
 
@@ -536,7 +536,7 @@ Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括
 
 **用Dockerfile编写镜像步骤**
 
-1. 编写Dockerfile文件, 名称必须是`Dockerfile`
+1. 编写Dockerfile文件,  文件名必须是`Dockerfile`
 2. docker build命令构建镜像
 3. docker run镜像运行容器实例
 
@@ -1022,3 +1022,486 @@ Successfully tagged order-project:1.0
 
 # Docker网络
 
+## 作用
+
+Docker提供了Docker内部的网络功能，容器与容器，容器与宿主机之间可以组建网络通信。
+
+Docker网卡是Docker容器和Linux主机之间的桥梁。
+
+> docker容器内部的ip, 在容器重启后是有可能会发生改变的.
+
+容器IP变动时候可以通过服务名直接网络通信而不受到影响.
+
+
+
+如果在宿主机上执行ifconfig，可看到Docker网卡配置信息，这个是在主机上安装Docker时创建的。
+
+```shell
+[root@test ~]# ifconfig
+docker0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        ether 02:42:12:88:82:0a  txqueuelen 0  (Ethernet)
+        RX packets 94331  bytes 50762981 (48.4 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 101977  bytes 209756908 (200.0 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+...
+```
+
+
+
+**列出Docker的当前全部网络**
+
+```shell
+[root@threegene-biz-kfus23d-test ~]# docker network ls
+NETWORK ID     NAME      DRIVER    SCOPE
+3e402974684d   bridge    bridge    local
+090a43dd0a09   host      host      local
+542b4b953afb   none      null      local
+```
+
+
+
+**支持的命令**
+
+```shell
+[root@test ~]# docker network --help
+
+Usage:  docker network COMMAND
+
+Manage networks
+
+Commands:
+  connect     Connect a container to a network
+  create      Create a network
+  disconnect  Disconnect a container from a network
+  inspect     Display detailed information on one or more networks
+  ls          List networks
+  prune       Remove all unused networks
+  rm          Remove one or more networks
+```
+
+
+
+
+
+## **网络模式**
+
+| 网络模式      | 指令                                      | 描述                                                         |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------ |
+| bridge模式    | `--network bridge`指定，默认使用`docker0` | (`默认`)为每一个容器分配、设置ip, 并将容器连接到`docker0`.   |
+| host模式      | `--network host`                          | 容器不会虚拟出自己的网卡以及配置自己的ip, 而是使用宿主机的ip与端口 |
+| none模式      | `--network none`                          | 容器有独立的network namespace, 但并没有对其进行任何网络设置, 例如分配veth pair和网络桥接, ip等 |
+| container模式 | `--network container:NAME或者容器ID`      | 新的容器不会创建自己的网卡配置以及ip, 而是和指定的容器共享ip, 端口范围等. |
+| 自定义模式    | `--network 自定义网络名`                  | 自定义网络本身就维护好了主机名和ip的对应关系（ip和域名都能通） |
+
+
+
+### bridge模式
+
+Docker 服务默认会创建一个名为`docker0` 网桥（其上有一个 docker0 内部接口），它在内核层连通了其他的物理或虚拟网卡，这就将所有容器和本地主机都放到同一个物理网络。Docker 默认指定了 docker0 接口 的 IP 地址和子网掩码，**让主机和容器之间可以通过网桥相互通信**。
+
+
+
+```shell
+[root@test ~]# docker network inspect bridge
+...           
+        "Options": {
+            "com.docker.network.bridge.default_bridge": "true",
+            "com.docker.network.bridge.enable_icc": "true",
+            "com.docker.network.bridge.enable_ip_masquerade": "true",
+            "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+            # docker0网桥
+            "com.docker.network.bridge.name": "docker0",
+            "com.docker.network.driver.mtu": "1500"
+        },
+...
+
+[root@test ~]# ifconfig
+docker0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        ether 02:42:12:88:82:0a  txqueuelen 0  (Ethernet)
+        RX packets 125180  bytes 52285743 (49.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 132826  bytes 211711556 (201.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+...
+```
+
+
+
+1. Docker使用Linux桥接，在宿主机虚拟一个Docker容器网桥(docker0)，Docker启动一个容器时会根据Docker网桥的网段分配给容器一个IP地址，称为`Container-IP`，同时Docker网桥是每个容器的默认网关。因为在同一宿主机内的容器都接入同一个网桥，这样容器之间就能够通过容器的Container-IP直接通信。
+2. docker run 的时候，没有指定network的话**默认使用的网桥模式就是bridge**，**使用的就是docker0**。在宿主机ifconfig就可以看到docker0和自己create的network(后面讲)eth0，eth1，eth2……代表网卡一，网卡二，网卡三……，lo代表127.0.0.1，即localhost，inet addr用来表示网卡的IP地址
+3. 网桥docker0创建一对对等虚拟设备接口一个叫`veth`(vethernet虚拟网络接口)，另一个叫`eth0`，成对匹配。
+   - 整个宿主机的网桥模式都是docker0，类似一个交换机有一堆接口，每个接口叫veth，在本地主机和容器内分别创建一个虚拟接口，并让他们彼此联通（这样一对接口叫`veth pair`）；
+   - 每个容器实例内部也有一块网卡，每个接口叫eth0；
+   - docker0上面的每个veth匹配某个容器实例内部的eth0，两两配对，一 一匹配。
+   
+
+通过上述，将宿主机上的所有容器都连接到这个内部网络上，两个容器在同一个网络下,会从这个网关下各自拿到分配的ip，此时两个容器的网络是互通的。
+
+![docker_netwaork](img/docker_netwaork.jpg)
+
+
+
+**演示:**
+
+启动两个tomcat容器:
+
+```shell
+docker run -d -p 8081:8080 --name tomcat81 billygoo/tomcat8-jdk8
+docker run -d -p 8082:8080 --name tomcat82 billygoo/tomcat8-jdk8
+```
+
+两个容器内, 网卡地址映射
+
+![image-20220126152435385](img/image-20220126152435385.png)
+
+![image-20220126152624844](img/image-20220126152624844.png)
+
+宿主机
+
+![image-20220126153015579](img/image-20220126153015579.png)
+
+
+
+可以看到. 
+
+从网卡名能看出.  tomcat81容器的`编号102`的网卡`eth0@if103`与宿主机`编号103`的网卡`vethcfeced0@if102` 一一映射.  tomcat82容器也是如此.
+
+
+
+### host模式
+
+容器将不会获得一个独立的Network Namespace， 而是和宿主机共用一个Network Namespace。容器将不会虚拟出自己的网卡而是使用宿主机的IP和端口。
+
+![image-20220126162632769](img/image-20220126162632769.png)
+
+
+
+在容器中查看ip addr, 看到的是宿主机的网卡配置
+
+```shell
+root@test:/usr/local/tomcat# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:2f:32:e5 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.139/24 brd 192.168.1.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    link/ether 02:42:12:88:82:0a brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+```
+
+
+
+`docker run`时指定`--network=host`或`-net=host`，如果还指定了`-p`映射端口，那这个时候就会有此警告，并且通过`-p`设置的参数将不会起到任何作用，端口号会以主机端口号为主，重复时则递增。
+
+**演示:** 
+
+```shell
+[root@test ~]# docker run -d -p 8083:8080 --network host --name tomcat83 billygoo/tomcat8-jdk8
+WARNING: Published ports are discarded when using host network mode
+708047beea4f8396c6e7fcab905d19a00eea2946ee46b16635a86f0917cfe26e
+```
+
+`docker run` 指定host模式, 这时候-p参数是无效的. 并且会有warning. 消除warning的方式就是不指定-p, 或者使用bridge模式. 
+
+要访问tomcat的话, 使用默认`宿主机ip:8080`访问, 如果宿主机8080端口被占用. 则访问端口会递增为8081. 依次类推.
+
+
+
+### none模式
+
+在none模式下，并不为Docker容器进行任何网络配置。 也就是说，这个Docker容器没有网卡、IP、路由等信息，等于禁用网络功能, 只有一个`lo`(127.0.0.1表示本地回环). 需要我们自己为Docker容器添加网卡、配置IP等。
+
+
+
+在宿主机:
+
+```shell
+docker run -d -p 8084:8080 --network none --name tomcat84 billygoo/tomcat8-jdk8
+docker inspect tomcat84
+```
+
+![image-20220126164124358](img/image-20220126164124358.png)
+
+
+
+### container模式
+
+新建的容器和已经存在的一个容器共享一个网络ip配置。新容器不会创建自己的网卡和配置自己的IP，而是和一个指定的容器共享IP、端口范围等。
+
+同样，两个容器除了网络方面，其他的如文件系统、进程列表等还是隔离的。
+
+![image-20220126165824873](img/image-20220126165824873.png)
+
+**演示:** 
+
+tomcat容器不适合container模式, 会报错:
+
+ `docker: Error response from daemon: conflicting options: port publishing and the container type network mode.`
+
+
+
+使用`Alpine`容器演示
+
+> Alpine Linux 是一款独立的、非商业的通用 Linux 发行版，专为追求安全性、简单性和资源效率的用户而设计。 可能很多人没听说过这个 Linux 发行版本，但是经常用 Docker 的朋友可能都用过，因为他小，简单，安全而著称，所以作为基础镜像是非常好的一个选择，可谓是麻雀虽小但五脏俱全，镜像非常小巧，不到 6M的大小，所以特别适合容器打包。
+
+```shell
+docker run -it                             --name alpine1  alpine /bin/sh
+docker run -it --network container:alpine1 --name alpine2  alpine /bin/sh
+```
+
+![image-20220126170428857](img/image-20220126170428857.png)
+
+![image-20220126170502073](img/image-20220126170502073.png)
+
+这时候, 如果把被依赖的alpine1停了.  那么apile2的网卡配置将只剩`lo`
+
+![image-20220126170649689](img/image-20220126170649689.png)
+
+
+
+### 自定义网络模式
+
+
+
+旧模式: link模式, 将被被弃用. 推荐使用bridge桥接模式. 
+
+https://docs.docker.com/network/links/
+
+
+
+总所周知， 容器重启的时候, ip是可能会改变的. 因此不同容器互相访问, 不应该使用ip, 而应该用容器名.   但是默认bridge模式
+
+**自定义网络本身就维护好了主机名和ip的对应关系（ip和域名都能通）**.
+
+
+
+**演示:**
+
+启两个tomcat容器. 
+
+```shell
+docker run -d -p 8081:8080 --name tomcat81 billygoo/tomcat8-jdk8
+docker run -d -p 8082:8080 --name tomcat82 billygoo/tomcat8-jdk8
+```
+
+进入容器内, 可以通过ip互相ping通
+
+```shell
+# 从tomcat81容器去ping tomcat82的ip
+
+[root@threegene-biz-kfus23d-test ~]# docker exec -it tomcat81 bash
+root@e7cb038769b6:/usr/local/tomcat# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+110: eth0@if111: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+root@e7cb038769b6:/usr/local/tomcat# ping 172.17.0.3
+PING 172.17.0.3 (172.17.0.3) 56(84) bytes of data.
+64 bytes from 172.17.0.3: icmp_seq=1 ttl=64 time=0.323 ms
+64 bytes from 172.17.0.3: icmp_seq=2 ttl=64 time=0.205 ms
+64 bytes from 172.17.0.3: icmp_seq=3 ttl=64 time=0.120 ms
+64 bytes from 172.17.0.3: icmp_seq=4 ttl=64 time=0.111 ms
+64 bytes from 172.17.0.3: icmp_seq=5 ttl=64 time=0.121 ms
+64 bytes from 172.17.0.3: icmp_seq=6 ttl=64 time=0.117 ms
+^C
+--- 172.17.0.3 ping statistics ---
+6 packets transmitted, 6 received, 0% packet loss, time 5000ms
+rtt min/avg/max/mdev = 0.111/0.166/0.323/0.077 ms
+```
+
+但是， 通过容器名是无法ping通的.  因此需要两个容器都加入自定义网络.
+
+```shell
+root@e7cb038769b6:/usr/local/tomcat# ping tomcat82
+ping: tomcat82: Temporary failure in name resolution
+```
+
+
+
+**创建自定义网络**
+
+```shell
+[root@test ~]# docker network create hyc_network
+ae92cbf1829e1d7483c4e8465d0da0b6e54c418e5edea6316cc278c7dc29ddfb
+[root@test ~]# docker network ls
+NETWORK ID     NAME          DRIVER    SCOPE
+3e402974684d   bridge        bridge    local
+090a43dd0a09   host          host      local
+ae92cbf1829e   hyc_network   bridge    local
+542b4b953afb   none          null      local		
+```
+
+**新建的容器指定网络为自定义网络**
+
+```shell
+[root@threegene-biz-kfus23d-test ~]# docker run -d -p 8081:8080 --network hyc_network --name tomcat81 billygoo/tomcat8-jdk8
+4435fdca1f5df39972f4707e759c3a83e20ff4a9903488881513fd7ddc2966dc
+[root@threegene-biz-kfus23d-test ~]# docker run -d -p 8082:8080 --network hyc_network --name tomcat82 billygoo/tomcat8-jdk8
+db84a4ce237eb975f9233ffd76f5d93d6ab4e09efab8d494415590f0ca0ea0a0
+```
+
+**进入容器, ping 容器名测试**
+
+```shell
+[root@threegene-biz-kfus23d-test ~]# docker exec -it tomcat81 bash
+root@4435fdca1f5d:/usr/local/tomcat# ping tomcat82
+PING tomcat82 (172.18.0.3) 56(84) bytes of data.
+64 bytes from tomcat82.hyc_network (172.18.0.3): icmp_seq=1 ttl=64 time=0.131 ms
+64 bytes from tomcat82.hyc_network (172.18.0.3): icmp_seq=2 ttl=64 time=0.159 ms
+64 bytes from tomcat82.hyc_network (172.18.0.3): icmp_seq=3 ttl=64 time=0.139 ms
+64 bytes from tomcat82.hyc_network (172.18.0.3): icmp_seq=4 ttl=64 time=0.122 ms
+^C
+--- tomcat82 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3000ms
+rtt min/avg/max/mdev = 0.122/0.137/0.159/0.019 ms
+```
+
+
+
+# Docker-compose 容器编排
+
+Compose 是 Docker 公司推出的一个**工具软件**，可以管理多个 Docker 容器组成一个应用。可以用一个配置文件(`docker-compose.yml`)定义一个多容器的应用，然后使用一条指令安装这个应用的所有依赖，完成构建。Docker-Compose 解决了容器与容器之间如何管理编排的问题。
+
+
+
+## 安装
+
+> https://docs.docker.com/compose/install/
+
+
+
+```shell
+[root@test docker]# curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   664  100   664    0     0    963      0 --:--:-- --:--:-- --:--:--   963
+100 12.1M  100 12.1M    0     0   515k      0  0:00:24  0:00:24 --:--:--  833k
+[root@test docker]# chmod +x /usr/local/bin/docker-compose
+[root@test docker]# docker-compose --version
+docker-compose version 1.29.2, build 5becea4c
+```
+
+
+
+## 卸载
+
+`rm /usr/local/bin/docker-compose`
+
+
+
+## 使用
+
+**三个步骤**
+
+1. 编写Dockerfile定义各个微服务应用并构建出对应的镜像文件
+2. 使用 `docker-compose.yml `定义一个完整业务单元，安排好整体应用中的各个容器服务。
+3. 最后，执行`docker-compose up`命令 来启动并运行整个应用程序，完成一键部署上线
+
+
+
+**常用命令**
+
+> https://docs.docker.com/compose/reference/
+
+在`docker-compose.yml`文件当前目录执行命令
+
+```shell
+docker-compose -h                      # 查看帮助
+docker-compose up                      # 启动所有docker-compose服务
+docker-compose up -d                   # 启动所有docker-compose服务并后台运行
+docker-compose down                    # 停止并删除容器、网络、卷、镜像。
+docker-compose exec  yml里面的服务id     # 进入容器实例内部  docker-compose exec docker-compose.yml文件中写的服务id /bin/bash
+docker-compose ps                      # 展示当前docker-compose编排过的运行的所有容器
+docker-compose top                     # 展示当前docker-compose编排过的容器进程
+
+docker-compose logs yml里面的服务id     # 查看容器输出日志
+docker-compose config     # 检查配置
+docker-compose config -q  # 检查配置，有问题才有输出
+docker-compose restart   # 重启服务
+docker-compose start     # 启动服务
+docker-compose stop      # 停止服务
+```
+
+
+
+**`docker-compose.yml`配置说明**
+
+> https://docs.docker.com/compose/compose-file/compose-file-v3/
+
+
+
+## 演示
+
+
+
+一个微服务 + redis单节点 + mysql的`docker-compose.yml`内容
+
+```yml
+## docker-compose.yml
+
+version: "3.9"
+ 
+services:
+  microService:
+    image: docker-boot:1.0
+    container_name: docker-boot01
+    ports:
+      - "8080:8080"
+    volumes:
+      - /app/microService:/data
+    networks: 
+      - hyc_net
+    depends_on: 
+      - redis
+      - mysql
+ 
+  redis:
+    image: redis:6.0.8
+    ports:
+      - "6379:6379"
+    volumes:
+      - /app/redis/redis.conf:/etc/redis/redis.conf
+      - /app/redis/data:/data
+    networks: 
+      - hyc_net
+    command: redis-server /etc/redis/redis.conf
+ 
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: '123456'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+      MYSQL_DATABASE: 'db_test'
+      MYSQL_USER: 'test'
+      MYSQL_PASSWORD: '123456'
+    ports:
+       - "3306:3306"
+    volumes:
+       - /app/mysql/db:/var/lib/mysql
+       - /app/mysql/conf/my.cnf:/etc/my.cnf
+       - /app/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - hyc_net
+    command: --default-authentication-plugin=mysql_native_password #解决外部无法访问
+ 
+networks: 
+   hyc_net: 
+```
+
+
+
+redis集群的`docker-compose.yml`
+
+https://www.cnblogs.com/mrhelloworld/p/docker14.html
