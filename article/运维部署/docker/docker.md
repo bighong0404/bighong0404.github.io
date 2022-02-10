@@ -1463,7 +1463,7 @@ services:
     volumes:
       - /app/microService:/data
     networks: 
-      - hyc_net
+      - hyc_network
     depends_on: 
       - redis
       - mysql
@@ -1476,7 +1476,7 @@ services:
       - /app/redis/redis.conf:/etc/redis/redis.conf
       - /app/redis/data:/data
     networks: 
-      - hyc_net
+      - hyc_network
     command: redis-server /etc/redis/redis.conf
  
   mysql:
@@ -1494,15 +1494,360 @@ services:
        - /app/mysql/conf/my.cnf:/etc/my.cnf
        - /app/mysql/init:/docker-entrypoint-initdb.d
     networks:
-      - hyc_net
+      - hyc_network
     command: --default-authentication-plugin=mysql_native_password #解决外部无法访问
  
 networks: 
-   hyc_net: 
+   hyc_network: 
 ```
 
 
 
 redis集群的`docker-compose.yml`
 
-https://www.cnblogs.com/mrhelloworld/p/docker14.html
+[参考]: https://www.cnblogs.com/mrhelloworld/p/docker14.html
+
+
+
+**规划目录**
+
+```
+[root@test redis-cluster]# tree
+.
+├── 6371
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+├── 6372
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+├── 6373
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+├── 6374
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+├── 6375
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+├── 6376
+│   ├── conf
+│   │   └── redis.conf
+│   └── data
+│       ├── appendonly.aof
+│       └── nodes.conf
+└── docker-compose.yml
+```
+
+
+
+`redis.conf`内容
+
+```shell
+[root@test redis-cluster]# cat /root/docker/redis-cluster/637{1..6}/conf/redis.conf
+port 6371
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6371
+cluster-announce-bus-port 16371
+
+port 6372
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6372
+cluster-announce-bus-port 16372
+
+port 6373
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6373
+cluster-announce-bus-port 16373
+
+port 6374
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6374
+cluster-announce-bus-port 16374
+
+port 6375
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6375
+cluster-announce-bus-port 16375
+
+port 6376
+requirepass 1234
+masterauth 1234
+protected-mode no
+daemonize no
+appendonly yes
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 15000
+cluster-announce-ip 192.168.1.139
+cluster-announce-port 6376
+cluster-announce-bus-port 16376
+```
+
+
+
+编写`docker-compose.yml`,  配置6个redis容器
+
+```yml
+version: "3.8"
+
+services:
+  redis-6371:
+    image: redis
+    container_name: redis-6371
+    ports:
+      - "6371:6371"
+      - "16371:16371"
+    restart: always 
+    network_mode: "hyc_network"
+    volumes:
+      - /root/docker/redis-cluster/6371/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6371/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-6372:
+    image: redis
+    container_name: redis-6372
+    ports:
+      - "6372:6372"
+      - "16372:16372"
+    network_mode: "hyc_network"
+    volumes:
+      - /root/docker/redis-cluster/6372/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6372/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-6373:
+    image: redis
+    container_name: redis-6373
+    ports:
+      - "6373:6373"
+      - "16373:16373"
+    network_mode: "hyc_network"
+    volumes:
+      - /root/docker/redis-cluster/6373/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6373/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-6374: 
+    image: redis 
+    container_name: redis-6374 
+    ports:
+      - "6374:6374"
+      - "16374:16374"
+    restart: always 
+    network_mode: "hyc_network" 
+    volumes:
+      - /root/docker/redis-cluster/6374/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6374/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf 
+
+  redis-6375:
+    image: redis
+    container_name: redis-6375
+    ports:
+      - "6375:6375"
+      - "16375:16375"
+    network_mode: "hyc_network"
+    volumes:
+      - /root/docker/redis-cluster/6375/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6375/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-6376:
+    image: redis
+    container_name: redis-6376
+    ports:
+      - "6376:6376"
+      - "16376:16376"
+    network_mode: "hyc_network"
+    volumes:
+      - /root/docker/redis-cluster/6376/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /root/docker/redis-cluster/6376/data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+networks: 
+    hyc_network:
+```
+
+
+
+**检查语法**, `-q`静默输出, 有异常才输出
+
+```shell
+[root@test redis-cluster]# docker-compose -f docker-compose.yml config -q
+```
+
+
+
+**通过compose up命令一键启动**
+
+```shell
+[root@test redis-cluster]# docker-compose -f docker-compose.yml up -d
+WARNING: Some networks were defined but are not used by any service: hyc_network
+Starting redis-6375 ... done
+Starting redis-6373 ... done
+Starting redis-6376 ... done
+Starting redis-6371 ... done
+Starting redis-6372 ... done
+Starting redis-6374 ... done
+```
+
+
+
+**二次检查容器是否启动成功**
+
+```shell
+[root@test redis-cluster]# docker ps
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                    NAMES
+471c17c0c469   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6374
+16d94d0fffd8   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6371
+6441858f1d8b   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6375
+0a20e1c71e89   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6376
+0c9f48af38de   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6373
+ada33a827f9d   redis         "docker-entrypoint.s…"   46 seconds ago   Up 19 seconds   6379/tcp                 redis-6372
+```
+
+
+
+**创建集群**
+
+```shell
+# 进入容器
+[root@test redis-cluster]# docker exec -it redis-6371 bash
+
+# 执行创建集群命令
+root@cf534e9c3a84:/data# redis-cli -h 192.168.1.139 -p 6376 -a 1234 --cluster create 192.168.1.139:6371 192.168.1.139:6372 192.168.1.139:6373 192.168.1.139:6374 192.168.1.139:6375 192.168.1.139:6376 --cluster-replicas 1
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+>>> Performing hash slots allocation on 6 nodes...
+Master[0] -> Slots 0 - 5460
+Master[1] -> Slots 5461 - 10922
+Master[2] -> Slots 10923 - 16383
+Adding replica 192.168.1.139:6375 to 192.168.1.139:6371
+Adding replica 192.168.1.139:6376 to 192.168.1.139:6372
+Adding replica 192.168.1.139:6374 to 192.168.1.139:6373
+>>> Trying to optimize slaves allocation for anti-affinity
+[WARNING] Some slaves are in the same host as their master
+M: d5377989a1a3d0d84d8f0f465afd0050c8603fd8 192.168.1.139:6371
+   slots:[0-5460] (5461 slots) master
+M: e934f7e915fd854c85e6527dd8d84b2edc9991ec 192.168.1.139:6372
+   slots:[5461-10922] (5462 slots) master
+M: fe15d941db440d3879f57ea11e5a7bf9a353bbe0 192.168.1.139:6373
+   slots:[10923-16383] (5461 slots) master
+S: bc22274bbed787b8a547735222a7942fdb04849c 192.168.1.139:6374
+   replicates d5377989a1a3d0d84d8f0f465afd0050c8603fd8
+S: 23088f0d9375ae3d9080f23e77a417801ddc598f 192.168.1.139:6375
+   replicates e934f7e915fd854c85e6527dd8d84b2edc9991ec
+S: 0bc819b07599b08cb801f7ce6eaec19d79b3b088 192.168.1.139:6376
+   replicates fe15d941db440d3879f57ea11e5a7bf9a353bbe0
+Can I set the above configuration? (type 'yes' to accept): yes
+>>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join
+.
+>>> Performing Cluster Check (using node 192.168.1.139:6371)
+M: d5377989a1a3d0d84d8f0f465afd0050c8603fd8 192.168.1.139:6371
+   slots:[0-5460] (5461 slots) master
+   1 additional replica(s)
+S: 0bc819b07599b08cb801f7ce6eaec19d79b3b088 192.168.1.139:6376
+   slots: (0 slots) slave
+   replicates fe15d941db440d3879f57ea11e5a7bf9a353bbe0
+M: e934f7e915fd854c85e6527dd8d84b2edc9991ec 192.168.1.139:6372
+   slots:[5461-10922] (5462 slots) master
+   1 additional replica(s)
+M: fe15d941db440d3879f57ea11e5a7bf9a353bbe0 192.168.1.139:6373
+   slots:[10923-16383] (5461 slots) master
+   1 additional replica(s)
+S: bc22274bbed787b8a547735222a7942fdb04849c 192.168.1.139:6374
+   slots: (0 slots) slave
+   replicates d5377989a1a3d0d84d8f0f465afd0050c8603fd8
+S: 23088f0d9375ae3d9080f23e77a417801ddc598f 192.168.1.139:6375
+   slots: (0 slots) slave
+   replicates e934f7e915fd854c85e6527dd8d84b2edc9991ec
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+```
+
+
+
+**检查集群信息**
+
+```shell
+root@3dc84ce80fda:/data# redis-cli -p 6371 -a 1234                          
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+127.0.0.1:6371> CLUSTER info
+cluster_state:ok
+cluster_slots_assigned:16384
+cluster_slots_ok:16384
+cluster_slots_pfail:0
+cluster_slots_fail:0
+cluster_known_nodes:6
+cluster_size:3
+cluster_current_epoch:6
+cluster_my_epoch:1
+cluster_stats_messages_ping_sent:74
+cluster_stats_messages_pong_sent:73
+cluster_stats_messages_sent:147
+cluster_stats_messages_ping_received:68
+cluster_stats_messages_pong_received:74
+cluster_stats_messages_meet_received:5
+cluster_stats_messages_received:147
+```
+
