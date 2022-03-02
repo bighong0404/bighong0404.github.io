@@ -579,7 +579,7 @@ MongoDB索引使用B树数据结构（确切的说是B-Tree，MySQL是B+Tree）.
 
 MongoDB支持在文档的单个字段上创建用户定义的升序/降序索引，称为单字段索引（Single Field Index）。 对于单个字段索引和排序操作，索引键的排序顺序（即升序或降序）并不重要，因为MongoDB可以在任何方向上遍历索引。
 
-![Diagram of an index on the ``score`` field (ascending).](img/index-ascending.bakedsvg.svg)
+![](img/index-ascending.bakedsvg.svg)
 
 ### 复合索引
 
@@ -587,7 +587,7 @@ MongoDB还支持多个字段的用户定义索引，即复合索引（Compound I
 
 复合索引中列出的字段顺序具有重要意义。例如，如果复合索引由 { userid: 1, score: -1 } 组成，则索引首先按userid正序排序，然后 在每个userid的值内，再在按score倒序排序。
 
-![Diagram of a compound index on the ``userid`` field (ascending) and the ``score`` field (descending). The index sorts first by the ``userid`` field and then by the ``score`` field.](img/index-compound-key.bakedsvg.svg)
+![](img/index-compound-key.bakedsvg.svg)
 
 ### 其他索引
 
@@ -825,5 +825,44 @@ db.<collection>.find(query,options).explain(options)
 	},
 	"ok" : 1
 }
+```
+
+
+
+# docker-compose
+
+```yml
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:4.4
+    container_name: mongodb
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - /data/docker/mongodb/data:/data
+      - /data/docker/mongodb:/etc/mongod
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123456
+    command: mongod -f /etc/mongod/mongod.conf
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=123456
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+volumes:
+  data: {}
+
+networks:
+  default:
+    name: mongodb_default
 ```
 
