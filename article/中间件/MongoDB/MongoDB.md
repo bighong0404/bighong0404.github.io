@@ -829,7 +829,7 @@ db.<collection>.find(query,options).explain(options)
 
 
 
-# docker-compose
+# 单节点 docker-compose
 
 ```yml
 version: "3.8"
@@ -843,6 +843,7 @@ services:
       - 27017:27017
     volumes:
       - /data/docker/mongodb/data:/data
+      - /data/docker/mongodb/log:/var/log/mongodb/
       - /data/docker/mongodb:/etc/mongod
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
@@ -866,3 +867,47 @@ networks:
     name: mongodb_default
 ```
 
+
+
+# 集群
+
+
+
+## 副本集群
+
+
+
+副本集的节点有两种类型, 三种角色.
+
+两种类型：
+
+- 主节点（Primary）类型：数据操作的主要连接点，可读写。
+- 次要（辅助、从）节点（Secondaries）类型：数据冗余备份节点，可以读或选举。
+
+三种角色：
+
+- 主要成员（Primary）：主要接收所有写操作。就是主节点。
+
+- 副本成员（Replicate）：从主节点通过复制操作以维护相同的数据集，即备份数据，不可写操作，但可以读操作（但需要配置）。是默认的一种从节点类型。
+
+- 仲裁者（Arbiter）：不保留任何数据的副本，只具有投票选举作用。当然也可以将仲裁服务器维护为副本集的一部分，即副本成员同时也可以是仲裁者。也是一种从节点类型。
+
+![image-20220302223407051](img/image-20220302223407051.png)
+
+
+
+
+
+## 分片集群
+
+分片群集包含以下组件：
+
+- 分片（存储）：每个分片包含分片数据的子集。**每个分片都可以部署为副本集**。
+- mongos（路由）：mongos充当查询路由器，在客户端应用程序和分片集群之间提供接口。
+- conﬁg servers（“调度”的配置）：配置服务器存储群集的元数据和配置设置。从MongoDB 3.4开始，必须将配置服务器部署为副本集（CSRS）。
+
+
+
+
+
+![image-20220302223525118](img/image-20220302223525118.png)
