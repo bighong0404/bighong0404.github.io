@@ -27,7 +27,7 @@ public interface Advisor {
 
 # exposeProxy
 
-JdkDynamicProxy.invoke()
+`JdkDynamicProxy.invoke()`
 
 
 
