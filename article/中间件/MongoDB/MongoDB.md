@@ -168,7 +168,7 @@ db.<collection>.findOne(<condition>, <projection>)
 
 - `db.<collection>.count()`或`db.<collection>.length()` 统计文档个数
 
-
+- 要通过主键_id查询.  需要 `{"_id" : ObjectId("620e13c87f354dd239033447")}`
 
 #### 2. 支持直接通过内嵌文档的属性值进行查询
 

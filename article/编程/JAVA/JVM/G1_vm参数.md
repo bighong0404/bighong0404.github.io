@@ -1,4 +1,19 @@
-**性能参数：**
+# 4核8G jvm模板
+
+```
+-Xms4096M -Xmx4096M -Xmn3072M -Xss1M 
+-XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=256m -XX:SurvivorRatio=8 
+-XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=10 -XX:PretenureSizeThreshold=2M 
+-XX:CMSInitiatingOccupancyFaction=92 -XX:+UseCMSCompactAtFullCollection -XX:CMSFullGCsBeforeCompaction=0 
+-XX:+CMSParallelInitialMarkEnabled -XX:+CMSScavengeBeforeRemark -XX:+DisableExplicitGC -XX:+PrintGCDetails 
+-XX:+PrintGCTimeStamps -Xloggc:./gclog/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/local/app/oom
+```
+
+
+
+
+
+# 性能参数
 
 | 参数名称                             | 含义                                                         | 默认值                                                    | 描述                                                         |
 | ------------------------------------ | ------------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------ |
@@ -31,7 +46,9 @@
 | -XX:ConcGCThreads                    |                                                              | -XX:ParallelGCThreads/4                                   | 并发标记阶段，并行执行的线程数                               |
 |                                      |                                                              |                                                           |                                                              |
 
-**功能开关：**
+
+
+# 功能开关
 
 | 参数名称                     | 含义                       | 默认值                      | 描述                                                         |
 | ---------------------------- | -------------------------- | --------------------------- | ------------------------------------------------------------ |
@@ -45,7 +62,9 @@
 | -XX:+UseCompressedOops       | 是否开启指针压缩           | 32G内存下默认开启           | 开启指针压缩，则Object Head 里的Klass Pointer为4字节，复杂属性的引用指针为4字节，数组的长度用4字节表示，这样能够节省部分内存空间 |
 | -XX:+PrintAdaptiveSizePolicy |                            |                             | 自适应策略，调节Young Old Size，一般G1不会设置新生代和老年代大小，而有G1根据停顿时间逐渐调整新生代和老年代的空间比例 |
 
-**调试参数：**
+
+
+# 调试参数
 
 | 参数名称                           | 含义                  | 默认值                         | 描述                                                         |
 | ---------------------------------- | --------------------- | ------------------------------ | ------------------------------------------------------------ |
