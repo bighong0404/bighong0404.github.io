@@ -342,8 +342,35 @@ centos7之后, 文件内容变更为说明, 讲解怎么设置系统默认运行
 #
 ```
 
-
 ## 4.2 文件类
+
+### tree指令
+
+linux默认不支持tree命令, 需要安装`yum install tree`
+
+```shell
+[root@centos7 ~]# tree
+bash: tree: 未找到命令...
+[root@centos7 ~]# yum install tree   
+已加载插件：fastestmirror, langpacks
+Determining fastest mirrors
+ * base: mirrors.cqu.edu.cn
+ * extras: ftp.sjtu.edu.cn
+ * updates: ftp.sjtu.edu.cn
+.
+.
+.
+已安装:
+  tree.x86_64 0:1.6.0-10.el7                                                                                                        
+[root@centos7 ~]# tree /mnt/sdb1/
+/mnt/sdb1/
+├── lost+found
+└── my.conf
+
+1 directory, 1 file
+```
+
+
 
 ### touch指令
 
@@ -631,7 +658,7 @@ tar: /usr/bin/tar /usr/include/tar.h /usr/share/man/man5/tar.5.gz /usr/share/man
 
 grep 过滤查找 ， 管道符“|”表示将前一个命令的处理结果输出传递给后面的命令处理。
 
-`grep [选项] 查找内容 源文件`
+`grep [选项] PATTERN 源文件`, PATTERN支持正则
 
 选项-n,  显示行号
 
@@ -915,4 +942,193 @@ Linux 硬盘分 IDE 硬盘和 SCSI 硬盘，目前基本上是 **SCSI** 硬盘.
 > - IDE的工作方式需要CPU的全程参与，CPU读写数据的时候不能再进行其他操作；而SCSI接口，则完全通过独立的高速的SCSI卡来控制数据的读写操作，CPU就不必浪费时间进行等待，可以提高系统的整体性能。
 > - SCSI的扩充性比IDE大，一般每个IDE系统可有2个IDE通道，总共连4个IDE设备，而SCSI接口可连接7—15个设备，比IDE要多很多。 连接的线缆也远长于IDE。
 > - 性价比上，在当时IDE更具有优势，SCSI接口价格一般会比IDE接口贵一些。
+
+
+
+## 挂载一个新磁盘
+
+步骤: 
+
+1. 虚拟机添加硬盘, 添加完后重启linux, lsblk命令查看新磁盘, 如下`sdb`就是新磁盘
+
+   ```shell
+   [root@centos7 ~]# lsblk
+   NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+   sda      8:0    0   15G  0 disk 
+   ├─sda1   8:1    0    1G  0 part /boot
+   ├─sda2   8:2    0    2G  0 part [SWAP]
+   └─sda3   8:3    0   12G  0 part /
+   sdb      8:16   0    1G  0 disk 
+   sr0     11:0    1 1024M  0 rom
+   [root@centos7 ~]# ls /dev/ |grep sdb   // 设备都在/dev目录下, 因此新分区是/dev/sdb
+   sdb
+   ```
+   `fdisk -l`也可以查看磁盘分区表
+   
+   ```shell
+   [root@centos7 ~]# fdisk -l
+   
+   磁盘 /dev/sda：16.1 GB, 16106127360 字节，31457280 个扇区
+   Units = 扇区 of 1 * 512 = 512 bytes
+   扇区大小(逻辑/物理)：512 字节 / 512 字节
+   I/O 大小(最小/最佳)：512 字节 / 512 字节
+   磁盘标签类型：dos
+   磁盘标识符：0x000b6a64
+   
+      设备 Boot      Start         End      Blocks   Id  System
+   /dev/sda1   *        2048     2099199     1048576   83  Linux
+   /dev/sda2         2099200     6293503     2097152   82  Linux swap / Solaris
+   /dev/sda3         6293504    31451135    12578816   83  Linux
+   
+   磁盘 /dev/sdb：1073 MB, 1073741824 字节，2097152 个扇区
+   Units = 扇区 of 1 * 512 = 512 bytes
+   扇区大小(逻辑/物理)：512 字节 / 512 字节
+   I/O 大小(最小/最佳)：512 字节 / 512 字节
+   磁盘标签类型：dos
+   磁盘标识符：0xd7099d78
+   ```
+   
+   
+
+
+2. 分区
+
+    使用分区命令 `fdisk /dev/sdb`, 按提示操作, 完成后记得输入w命令写入磁盘保存设置.
+
+    ```shell
+    [root@centos7 ~]# fdisk /dev/sdb
+    欢迎使用 fdisk (util-linux 2.23.2)。
+    
+    更改将停留在内存中，直到您决定将更改写入磁盘。
+    使用写入命令前请三思。
+    
+    Device does not contain a recognized partition table
+    使用磁盘标识符 0xd7099d78 创建新的 DOS 磁盘标签。
+    
+    命令(输入 m 获取帮助)：m
+    命令操作
+       a   toggle a bootable flag
+       b   edit bsd disklabel
+       c   toggle the dos compatibility flag
+       d   delete a partition
+       g   create a new empty GPT partition table
+       G   create an IRIX (SGI) partition table
+       l   list known partition types
+       m   print this menu
+       n   add a new partition
+       o   create a new empty DOS partition table
+       p   print the partition table
+       q   quit without saving changes
+       s   create a new empty Sun disklabel
+       t   change a partition's system id
+       u   change display/entry units
+       v   verify the partition table
+       w   write table to disk and exit
+       x   extra functionality (experts only)
+    
+    命令(输入 m 获取帮助)：n
+    Partition type:
+       p   primary (0 primary, 0 extended, 4 free)
+       e   extended
+    Select (default p): p 		// 主分区
+    分区号 (1-4，默认 1)：1 			//1个分区	
+    起始 扇区 (2048-2097151，默认为 2048)：
+    将使用默认值 2048
+    Last 扇区, +扇区 or +size{K,M,G} (2048-2097151，默认为 2097151)：
+    将使用默认值 2097151
+    分区 1 已设置为 Linux 类型，大小设为 1023 MiB
+    
+    命令(输入 m 获取帮助)：w   	//w   write table to disk and exit, 写入磁盘保存设置, 并退出
+    The partition table has been altered!
+    
+    Calling ioctl() to re-read partition table.
+    正在同步磁盘。	
+    ```
+
+3. 格式化分区
+
+    命令`mkfs -t ext4 /dev/sdb1`
+
+    ```shell
+    [root@centos7 ~]# mkfs -h
+    用法：
+     mkfs [选项] [-t <类型>] [文件系统选项] <设备> [<大小>]
+    
+    选项：
+     -t, --type=<类型>  文件系统类型；若不指定，将使用 ext2
+         fs-options     实际文件系统构建程序的参数
+         <设备>         要使用设备的路径
+         <大小>         要使用设备上的块数
+     -V, --verbose      解释正在进行的操作；
+                          多次指定 -V 将导致空运行(dry-run)
+     -V, --version      显示版本信息并退出
+                          将 -V 作为 --version 选项时必须是惟一选项
+     -h, --help         显示此帮助并退出
+    
+    更多信息请参阅 mkfs(8)。
+    [root@centos7 ~]# mkfs -t ext4 /dev/sdb1
+    mke2fs 1.42.9 (28-Dec-2013)
+    文件系统标签=
+    OS type: Linux
+    块大小=4096 (log=2)
+    分块大小=4096 (log=2)
+    Stride=0 blocks, Stripe width=0 blocks
+    65536 inodes, 261888 blocks
+    13094 blocks (5.00%) reserved for the super user
+    第一个数据块=0
+    Maximum filesystem blocks=268435456
+    8 block groups
+    32768 blocks per group, 32768 fragments per group
+    8192 inodes per group
+    Superblock backups stored on blocks: 
+            32768, 98304, 163840, 229376
+    
+    Allocating group tables: 完成                            
+    正在写入inode表: 完成                            
+    Creating journal (4096 blocks): 完成
+    Writing superblocks and filesystem accounting information: 完成
+    ```
+
+4. 挂载
+
+    `mount`命令把分区`/dev/sdb1`挂载到`/mnt/sdb1`目录
+
+    ```shell
+    [root@centos7 ~]# cd /mnt/
+    [root@centos7 mnt]# mkdir sdb1
+    [root@centos7 mnt]# mount /dev/sdb1 /mnt/sdb1
+    [root@centos7 sdb1]# lsblk
+    NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+    sda      8:0    0   15G  0 disk 
+    ├─sda1   8:1    0    1G  0 part /boot
+    ├─sda2   8:2    0    2G  0 part [SWAP]
+    └─sda3   8:3    0   12G  0 part /
+    sdb      8:16   0    1G  0 disk 
+    └─sdb1   8:17   0 1023M  0 part /mnt/sdb1    //显示已经挂载到/mnt/sdb1
+    sr0     11:0    1 1024M  0 rom
+    ```
+
+    如果想更换挂载的目录, 需要先卸载(`unmount`命令), 再重新挂载`mount`
+
+5. 设置永久挂载
+
+    将分区挂载写入`/etc/fstab`文件，防止主机重启后分区丢失的问题. 添加完成后执行 `mount –a` 即刻生效
+
+    ```shell
+    [root@centos7 ~]# cat /etc/fstab 
+    
+    #
+    # /etc/fstab
+    # Created by anaconda on Tue Oct 10 01:05:33 2023
+    #
+    # Accessible filesystems, by reference, are maintained under '/dev/disk'
+    # See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+    #
+    UUID=919b081c-a940-474b-a042-6e298514a6c8 /                       ext4    defaults        1 1
+    UUID=b9cc762e-1537-40df-93a6-aa2da3376ffc /boot                   ext4    defaults        1 2
+    UUID=25ce7747-ff98-49f0-acf1-7220ebf9b5bc swap                    swap    defaults        0 0
+    /dev/sdb1      /mnt/sdb1    ext4  defaults        0 0     // 这一行
+    ```
+
+    添加配置`/dev/sdb1      /mnt/sdb1    ext4  defaults        0 0`, 使用分区uuid也可以, 分区uuid通过命令`lsblk -f`查看
 
