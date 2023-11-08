@@ -6,7 +6,7 @@
 
 Linux是基于Unix系统二次开发, Sun的solari, IBM的AIX也是基于Unix系统实现的, 但后两者只能运行在特定的大型机上, 而Linux可以运行在x86的个人计算机.
 
-<img src="/Users/bearomac/Library/Application Support/typora-user-images/image-20231009233720944.png" alt="image-20231009233720944" style="zoom:50%;" />
+<img src="img/image-20231009233720944.png" style="zoom:50%;" />
 
 
 
