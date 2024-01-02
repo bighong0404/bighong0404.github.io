@@ -911,7 +911,7 @@ at 的守护进程 atd 会以后台模式运行，每60秒检查作业队列来�
 
 ## lsblk命令
 
-lsblk的英文是“list block”，列出所有可用块设备的信息，而且还能显示他们之间的依赖关系，但是它不会列出RAM盘的信息。
+lsblk的全称是“list block”，列出所有可用块设备的信息，而且还能显示他们之间的依赖关系，但是它不会列出RAM盘的信息。
 
 块设备有硬盘，闪存盘，CD-ROM等等。
 
@@ -1131,4 +1131,525 @@ Linux 硬盘分 IDE 硬盘和 SCSI 硬盘，目前基本上是 **SCSI** 硬盘.
     ```
 
     添加配置`/dev/sdb1      /mnt/sdb1    ext4  defaults        0 0`, 使用分区uuid也可以, 分区uuid通过命令`lsblk -f`查看
+
+
+
+# 8. 进程管理
+
+## ps命令
+
+ps 命令是用来查看目前系统中进程执行情况.
+
+`格式`:
+
+​	ps [option]
+
+`常用option`
+
+- -a,显示当前终端的所有进程
+
+- -u, 以用户形式显示进程信息
+
+- -x,显示进程参数
+
+- -e 显示所有进程。
+
+- -f 全格式输出
+
+  
+
+**`ps -aux`输出内容说明, BSD格式输出**
+
+```shell
+[root@centos7 ~]# ps -aux
+USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root          1  0.0  0.2 128276  5172 ?        Ss   11月19   0:24 /usr/lib/systemd/systemd --switched-root --system --deserialize 
+root          2  0.0  0.0      0     0 ?        S    11月19   0:00 [kthreadd]
+root          3  0.0  0.0      0     0 ?        S    11月19   0:04 [ksoftirqd/0]
+root       7598  0.0  0.0  53856   376 ?        S    11月19   0:00 /usr/sbin/dnsmasq --conf-file=/var/lib/libvirt/dnsmasq/default.c
+root       7684  0.0  0.1  91628  2160 ?        Ss   11月19   0:01 /usr/libexec/postfix/master -w
+postfix    7696  0.0  0.1  91800  3832 ?        S    11月19   0:00 qmgr -l -t unix -u
+root       7861  0.0  0.3 430364  6300 ?        Ssl  11月19   0:01 /usr/libexec/upowerd
+root       7928  0.0  0.1 398564  3632 ?        Ssl  11月19   0:00 /usr/libexec/boltd
+root       7932  0.0  0.4 562372  9560 ?        Ssl  11月19   0:06 /usr/libexec/packagekitd
+root       7942  0.0  0.1  78560  2740 ?        Ss   11月19   0:00 /usr/sbin/wpa_supplicant -u -f /var/log/wpa_supplicant.log -c /e
+colord     8026  0.0  0.2 419712  5208 ?        Ssl  11月19   0:00 /usr/libexec/colord
+postfix   62255  0.0  0.2  91732  4088 ?        S    21:01   0:00 pickup -l -t unix -u
+root      62732  0.0  0.0      0     0 ?        S    21:50   0:00 [kworker/u256:2]
+root      63088  0.0  0.0      0     0 ?        S    22:20   0:00 [kworker/u256:1]
+root      63110  0.0  0.0      0     0 ?        S    22:22   0:00 [kworker/0:1]
+root      63121  0.0  0.0 110484  1000 pts/0    S+   22:23   0:00 more
+root      63123  0.0  0.2 160848  5644 ?        Ss   22:23   0:00 sshd: root@pts/1
+root      63128  0.0  0.1 116652  3288 pts/1    Ss   22:23   0:00 -bash
+root      63175  0.0  0.0 110484  1004 pts/1    S+   22:23   0:00 more
+root      63176  0.0  0.2 160848  5648 ?        Ss   22:23   0:00 sshd: root@pts/2
+root      63181  0.0  0.1 116652  3304 pts/2    Ss   22:23   0:00 -bash
+root      63281  0.0  0.0      0     0 ?        S    22:27   0:00 [kworker/0:0]
+root      63328  0.0  0.0 107952   616 ?        S    22:30   0:00 sleep 60
+root      63330  0.0  0.0 157444  1928 pts/2    R+   22:31   0:00 ps -aux
+```
+
+- USER: 行程拥有者
+- PID: pid
+- %CPU: 占用的 CPU 使用率
+- %MEM: 占用的内存使用率
+- VSZ: 占用的虚拟内存大小, KB
+- RSS: 占用的物理内存大小, KB
+- TTY: 终端的次要装置号码 (minor device number of tty)
+- STAT: 该行程的状态:
+  - D: 无法中断的休眠状态 (通常 IO 的进程)
+  - R: 正在执行中
+  - S: 静止状态
+  - T: 暂停执行
+  - Z: 不存在但暂时无法消除
+  - W: 没有足够的记忆体分页可分配
+  - <: 高优先序的行程
+  - N: 低优先序的行程
+  - L: 有内存分页分配并锁在内存 (实时系统或捱A I/O)
+- START: 行程开始时间
+- TIME: 执行的时间
+- COMMAND:所执行的指令
+
+
+
+**`ps -ef`输出内容说明**, 标准格式
+
+```shell
+[root@centos7 ~]# ps -ef
+UID         PID   PPID  C STIME TTY          TIME CMD
+root          1      0  0 11月19 ?      00:00:24 /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+root          2      0  0 11月19 ?      00:00:00 [kthreadd]
+root          3      2  0 11月19 ?      00:00:04 [ksoftirqd/0]
+root          5      2  0 11月19 ?      00:00:00 [kworker/0:0H]
+root          7      2  0 11月19 ?      00:00:00 [migration/0]
+root          8      2  0 11月19 ?      00:00:00 [rcu_bh]
+root          9      2  0 11月19 ?      00:00:16 [rcu_sched]
+root         10      2  0 11月19 ?      00:00:00 [lru-add-drain]
+root         11      2  0 11月19 ?      00:00:19 [watchdog/0]
+hyc       34795  34157  0 11月19 ?      00:00:00 abrt-applet
+hyc       34818  34763  0 11月19 ?      00:00:00 /usr/libexec/evolution-addressbook-factory-subprocess --factory all --bus-name org
+hyc       34842  34427  0 11月19 ?      00:00:00 /usr/libexec/ibus-engine-simple
+root      35214      1  0 11月19 ?      00:00:03 /usr/libexec/fwupd/fwupd
+geoclue   35280      1  0 11月19 ?      00:00:02 /usr/libexec/geoclue -t 5
+hyc       35637  34230  0 11月19 ?      00:00:00 /usr/libexec/gvfsd-network --spawner :1.3 /org/gtk/gvfs/exec_spaw/7
+hyc       35744  34230  0 11月19 ?      00:00:00 /usr/libexec/gvfsd-dnssd --spawner :1.3 /org/gtk/gvfs/exec_spaw/25
+root      62162   7383  0 21:00 ?        00:00:00 sshd: root@pts/0
+root      62167  62162  0 21:00 pts/0    00:00:00 -bash
+```
+
+- UID:用户 ID 
+- PID:进程 ID
+- PPID:父进程 ID
+- C: CPU 用于计算执行优先级的因子。数值越大，表明进程是 CPU 密集型运算，执行优先级会降低;数值越小，表明进程是 I/O 密集型运算，执行优先级会提高
+- STIME:进程启动的时间 
+- TTY:完整的终端名称 
+- TIME:CPU 时间 
+- CMD:启动进程所用的命令和参数
+
+
+
+## pstree命令
+
+查看进程树
+
+-p :显示进程的 PID
+-u :显示进程的所属用户
+
+
+
+
+
+# 9. 服务管理
+
+## service 指令
+
+在CentOS7.0后很多服务不再使用service,而是`systemctl`. 
+
+**基本语法:** service 服务名 [start | stop | restart | reload | status]
+
+service 指令管理的服务在 /etc/init.d 查看
+
+```shell
+[root@centos7 ~]# ll /etc/init.d/
+总用量 88
+-rw-r--r--. 1 root root 18281 8月  24 2018 functions
+-rwxr-xr-x. 1 root root  4569 8月  24 2018 netconsole
+-rwxr-xr-x. 1 root root  7923 8月  24 2018 network
+-rw-r--r--. 1 root root  1160 10月 31 2018 README
+-rwxr-xr-x. 1 root root 45702 10月 11 23:43 vmware-tools
+```
+
+
+
+## systemctl指令
+
+CentOS7.0后由systemctl管理服务.
+
+**基本语法:** systemctl [start | stop | restart | status] 服务名
+
+systemctl 指令管理的服务在 /usr/lib/systemd/system 查看
+
+```shell
+[root@centos7 ~]# ll /usr/lib/systemd/system
+总用量 1568
+-rw-r--r--. 1 root root  275 11月 14 2018 abrt-ccpp.service
+-rw-r--r--. 1 root root  380 11月 14 2018 abrtd.service
+-rw-r--r--. 1 root root  361 11月 14 2018 abrt-oops.service
+-rw-r--r--. 1 root root  266 11月 14 2018 abrt-pstoreoops.service
+-rw-r--r--. 1 root root  262 11月 14 2018 abrt-vmcore.service
+-rw-r--r--. 1 root root  311 11月 14 2018 abrt-xorg.service
+-rw-r--r--. 1 root root  729 10月 31 2018 accounts-daemon.service
+...
+-rw-r--r--. 1 root root  657 10月 31 2018 firewalld.service
+...
+```
+
+其中, firewalld.service是完全服务名, 简称firewalld, 可以直接使用简称, 例如`systemctl status firewalld`
+
+```shell
+[root@centos7 ~]# systemctl status firewalld
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+   Active: active (running) since 四 2023-11-09 00:11:58 CST; 1 weeks 4 days ago
+     Docs: man:firewalld(1)
+ Main PID: 6681 (firewalld)
+    Tasks: 2
+   CGroup: /system.slice/firewalld.service
+           └─6681 /usr/bin/python -Es /usr/sbin/firewalld --nofork --nopid
+
+11月 09 00:11:57 centos7.6-study systemd[1]: Starting firewalld - dynamic firewall daemon...
+11月 09 00:11:58 centos7.6-study systemd[1]: Started firewalld - dynamic firewall daemon.
+```
+
+
+
+**systemctl 设置服务的自启动状态**
+
+- systemctl list-unit-files, 查看服务开机启动状态
+- systemctl enable 服务名, 设置服务开机启动)
+- systemctl disable 服务名, 关闭服务开机启动)
+- systemctl is-enabled 服务名, 查询某个服务是否是自启动的
+
+
+
+# 10.  监控
+
+## top进程监控
+
+top命令可以实时监控正在执行的进程
+
+**格式**:
+
+​	top [option]
+
+**常用option**
+
+- -d 秒数: 以指定频率刷新数据, 默认3秒
+- -i: 不显示闲置或僵尸进程
+- -p: 监控指定进程
+
+**在top的界面交互**
+
+- P: 以CPU使用率排序, 默认模式
+
+- M: 以内存使用率排序
+
+- N: 以pid排序
+
+- q: 退出
+
+  
+
+## netstat网络监控
+
+**格式**:
+
+​	netstat [option]
+
+**常用option**
+
+- -a: all, 显示所有socket连接
+- -n: 进制使用域名解析功能。链接以数字形式展示(IP地址)，而不是通过主机名或域名形式展示 
+- -p: 与链接相关程序名和进程的PID
+- -t：所有的 tcp 协议的端口
+- -x：所有的 unix 协议的端口
+- -u：所有的 udp 协议的端口
+- -l：显示所有监听的端口
+
+```shell
+[root@centos7 ~]# netstat -anpl | more
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1/systemd           
+tcp        0      0 0.0.0.0:6000            0.0.0.0:*               LISTEN      7579/X              
+tcp        0      0 192.168.122.1:53        0.0.0.0:*               LISTEN      7595/dnsmasq        
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      7383/sshd           
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      7380/cupsd          
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN      7684/master         
+tcp        0      0 172.16.255.160:22       172.16.255.1:64290      ESTABLISHED 117741/sshd: root@p 
+tcp        0      0 172.16.255.160:22       172.16.255.1:65514      ESTABLISHED 118643/sshd: root@p 
+tcp        0      0 172.16.255.160:22       172.16.255.1:64289      ESTABLISHED 117740/sshd: root@p 
+tcp        0      0 172.16.255.160:22       172.16.255.1:64288      ESTABLISHED 117739/sshd: root@p 
+tcp6       0      0 :::111                  :::*                    LISTEN      1/systemd           
+tcp6       0      0 :::6000                 :::*                    LISTEN      7579/X              
+tcp6       0      0 :::22                   :::*                    LISTEN      7383/sshd           
+tcp6       0      0 ::1:631                 :::*                    LISTEN      7380/cupsd          
+tcp6       0      0 ::1:25                  :::*                    LISTEN      7684/master         
+udp        0      0 192.168.122.1:53        0.0.0.0:*                           7595/dnsmasq        
+udp        0      0 0.0.0.0:67              0.0.0.0:*                           7595/dnsmasq        
+udp        0      0 0.0.0.0:111             0.0.0.0:*                           1/systemd           
+udp        0      0 0.0.0.0:5353            0.0.0.0:*                           6590/avahi-daemon:  
+udp        0      0 127.0.0.1:323           0.0.0.0:*                           6609/chronyd        
+udp        0      0 0.0.0.0:55684           0.0.0.0:*                           6590/avahi-daemon:  
+udp        0      0 0.0.0.0:838             0.0.0.0:*                           6615/rpcbind        
+udp6       0      0 :::111                  :::*                                1/systemd           
+udp6       0      0 ::1:323                 :::*                                6609/chronyd        
+udp6       0      0 :::838                  :::*                                6615/rpcbind        
+raw6       0      0 :::58                   :::*                    7           6738/NetworkManager 
+Active UNIX domain sockets (servers and established)
+Proto RefCnt Flags       Type       State         I-Node   PID/Program name     Path
+unix  2      [ ACC ]     STREAM     LISTENING     259085   34152/gnome-keyring  /run/user/1000/keyring/pkcs11
+unix  2      [ ]         DGRAM                    20512    1/systemd            /run/systemd/shutdownd
+unix  2      [ ACC ]     STREAM     LISTENING     45427    7579/X               @/tmp/.X11-unix/X0
+unix  2      [ ACC ]     STREAM     LISTENING     259382   34427/ibus-daemon    @/tmp/dbus-ncpVaG53
+unix  2      [ ACC ]     STREAM     LISTENING     258272   34167/dbus-daemon    @/tmp/dbus-Fn2Z5leh2H
+
+```
+
+
+
+# 11. 程序包下载
+
+## rpm管理
+
+全称RedHat Package Manager, 用于互联网下载包的打包及安装工具.
+
+**rpm 包名基本格式**
+
+```shell
+[root@centos7 ~]# rpm -q firefox
+firefox-60.2.2-1.el7.centos.x86_64
+```
+
+- 名称: firefox
+- 版本号: 60.2.2-1
+- 适用操作系统: el7.centos.x86_64
+  - 表示 centos7.x 的 64 位系统
+  - 如果是 i686、i386 表示 32 位系统，
+  - noarch 表示通用
+
+**格式**
+
+​	rpm [option] [参数]
+
+**常用option**
+
+- -q `firefox`, 查询是否安装firefox包
+- -qa, 查询全部rpm安装的软件
+- -qi `firefox`, 显示firefox包详细信息
+- -ql `firefox`, 显示firefox包的所有文件
+- -qf `文件全路径名`, 查询文件所属的软件包
+
+```shell
+[root@centos7 ~]# rpm -ql firefox
+/etc/firefox
+/etc/firefox/pref
+/usr/bin/firefox
+/usr/lib64/firefox
+/usr/lib64/firefox/LICENSE
+/usr/lib64/firefox/application.ini
+/usr/lib64/firefox/browser/blocklist.xml
+/usr/lib64/firefox/browser/chrome
+/usr/lib64/firefox/browser/chrome.manifest
+/usr/lib64/firefox/browser/chrome/icons
+/usr/lib64/firefox/browser/chrome/icons/default
+/usr/lib64/firefox/browser/chrome/icons/default/default128.png
+/usr/lib64/firefox/browser/chrome/icons/default/default16.png
+...
+[root@centos7 ~]# rpm -qf /usr/bin/firefox
+firefox-60.2.2-1.el7.centos.x86_64
+```
+
+- rpm -e `firefox`,  卸载firefox
+  - -e: eraser, 擦除
+  - --nodeps 不验证包依赖, 强行删除
+
+- rpm -ivh `完整rpm包路径`, 安装rpm包
+  - -i: install
+  - -v: verbos, 提示
+  - -h: hash, 软件包安装的时候列出哈希标记, 常和 -v 一起使用
+
+
+
+
+## YUM管理
+
+Yum 是一个基于 RPM 的包管理工具，能够从指定的服务器自动下载 RPM 包并且安装，包括所有依赖的软件包。
+
+
+
+yum list|grep firefox
+
+yum install firefox
+
+yum erase firefox
+
+
+
+
+
+# 12. Shell
+
+Shell 是一个命令行解释器，它为用户提供了一个向 Linux 内核发送请求以便运行程序的界面系统级程序。
+
+
+
+## 12.1 Shell 脚本的执行方式 
+
+### 脚本格式要求
+
+- 脚本以`#!/bin/bash`开头
+
+- 脚本需要有可执行权限
+
+### 脚本的常用执行方式
+
+- 先赋予脚本**执行权限**再执行脚本, 两种执行方式
+  - ./hello.sh执行
+  -  /root/shcode/hello.sh 绝对路径执行
+
+- `sh hello.sh`可以直接执行, 不用赋予脚本执行权限
+
+
+
+## 12.2 shell变量
+
+Linux Shell 中的变量分为，系统变量和用户自定义变量。
+
+### 系统变量
+
+`$HOME、$PWD、$SHELL、$USER` 等等, `set`命令可以显示当前shell中所有变量.
+
+
+
+### 自定义变量
+
+**基本语法**
+
+- 定义变量: 变量名=值
+- 撤销变量: unset 变量
+- 声明静态变量: readonly 变量，注意: 静态变量不能unset
+
+**定义变量的规则**
+
+- 变量名称可以由字母、数字和下划线组成，但是不能以数字开头。
+- 等号两侧不能有空格
+- 变量名称一般习惯为大写，这是一个规范
+
+**将命令的返回值赋给变量**
+
+- A=\`date\`(反引号)，运行里面的命令，并把结果返回给变量 A
+- A=$(date) 等价于反引号
+
+```shell
+#!/bin/bash
+#定义变量A
+A=100
+
+#输出变量需要加上$
+echo A=$A
+echo "A=$A"
+
+#撤销变量A
+unset A
+echo A=$A
+
+#声明静态的变量B
+readonly B=100
+echo "readonly B=$B"
+
+#unset静态变量会报错
+#unset B
+
+#将命令的返回值赋给变量
+C=`date`
+D=$(date)
+echo "C=$C"
+echo "D=$D"
+
+# 多行注释
+:<<!
+多行注释1
+多行注释2
+echo "多行注释 $D"
+!
+```
+
+
+
+### 设置环境变量
+
+1. 在`/etc/profile`配置文件中增加行:  export 变量名=变量值,  将 shell 变量输出为环境变量/全局变量
+2. `source /etc/profile`配置文件, 让修改后的配置信息立即生效
+3. echo $变量名
+
+
+
+### 位置参数变量
+
+当我们执行一个 shell 脚本时，如果希望获取到命令行的参数信息，就可以使用到位置参数变量
+比如 : `./myshell.sh 100 200` , 这个就是一个执行 shell 的命令行，100 200是命令行参数, 可以使用位置参数获取命令行参数
+
+- $n :n 为数字，$0 代表命令本身，$1-$9 代表第一到第九个参数，十以上的参数要用大括号包含，如${10}
+- $\*: 这个变量代表命令行中所有的参数, $* 把所有参数合并成一个字符串
+- $@: 这个变量也代表命令行中所有的参数，但$@会得到一个字符串参数数组。
+- $#: 这个变量代表命令行中所有参数的个数
+
+```shell
+[root@centos7 ~]# cat positionVar.sh 
+#!/bin/bash
+echo "\$0: $0, \$1: $1, \$2: $2" 
+echo "所有参数\$*: $*"
+echo "所有参数\$@: $@"
+echo "参数个数\$#: $#"
+
+[root@centos7 ~]# sh positionVar.sh 100 200
+$0: positionVar.sh, $1: 100, $2: 200
+所有参数$*: 100 200
+所有参数$@: 100 200
+参数个数$#: 2
+```
+
+
+
+## 预定义变量
+
+shell 设计者事先已经定义好的变量，可以直接在 shell 脚本中使用
+
+- $$: 当前进程的进程号PID
+- $!: 上一个后台命令的进程号PID
+- $?: 上一个后台命令的执行返回状态。 0: 上一个命令正确执行, 非 0: 上一个命令执行不正确
+
+```shell
+[root@centos7 ~]# cat preVar.sh 
+ #!/bin/bash
+echo "当前执行的进程 id=$$" 
+#以后台的方式运行一个脚本，并获取他的进程号 
+sh  ~/var.sh &
+echo "最后一个后台方式运行的进程 id=$!"
+echo "执行的结果是=$?"
+
+[root@centos7 桌面]# sh preVar.sh 
+当前执行的进程 id=13066
+最后一个后台方式运行的进程 id=13067
+执行的结果是=0
+[root@centos7 ~]# A=100
+A=100
+A=
+readonly B=100
+C=2024年 01月 03日 星期三 00:01:56 CST
+D=2024年 01月 03日 星期三 00:01:56 CST
+^C
+[root@centos7 桌面]# 
+```
 
