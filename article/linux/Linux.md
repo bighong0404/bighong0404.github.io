@@ -671,15 +671,225 @@ tar: /usr/bin/tar /usr/include/tar.h /usr/share/man/man5/tar.5.gz /usr/share/man
 
 
 
-### grep指令和 管道符号 |
+### 管道符号 |
 
-grep 过滤查找 ， 管道符“|”表示将前一个命令的处理结果输出传递给后面的命令处理。
+管道符“|”表示将前一个命令的处理结果输出传递给后面的命令处理。
 
-`grep [选项] PATTERN 源文件`, PATTERN支持正则
+经常跟文本处理三剑客一起使用
 
-选项-n,  显示行号
+`ps -ef|grep xxxx`
 
-选项-i, 忽略大小写
+
+
+### 文本处理三剑客
+
+awk、grep、sed是linux操作文本的三大利器，合称文本三剑客。三者的功能都是处理文本，但侧重点各不相同，
+
+- grep适合单纯的查找或匹配文本
+- sed适合编辑匹配到的文本
+- awk适合对格式化文本进行处理分析, 并生成报告。
+
+其中属awk功能最强大，但也最复杂。
+
+
+
+#### grep指令
+
+grep全称是 `Global Regular Expression Print`, 使用正则表达式搜索文本，并把匹配的行打印出来。
+
+**格式**
+
+`grep [option] pattern file`,  PATTERN支持正则
+
+**option说明**
+
+- -A<行数 x>：除了显示符合范本样式的那一列之外，并显示该行之后的 x 行内容。
+- -B<行数 x>：除了显示符合样式的那一行之外，并显示该行之前的 x 行内容。
+- -C<行数 x>：除了显示符合样式的那一行之外，并显示该行之前后的 x 行内容。
+- -c：统计匹配的行数
+- -e ：实现多个选项间的逻辑or 关系
+- -F: 相当于`fgrep`命令，就是将`pattern`视为固定字符串, 而不是正则表达式
+- -i:  --ignore-case, 忽略字符大小写的差别。
+- -n：显示匹配的行号
+- -o：仅显示匹配到的字符串
+- -q： 静默模式，不输出任何信息. 有匹配的内容则立即返回状态值 0。一般用在脚本中的 `if` 判断里面
+- -s：不显示错误信息。
+- -v：显示不被 `pattern` 匹配到的行，相当于[^] 反向匹配
+- -w ：匹配 整个单词
+
+
+
+#### sed指令
+
+`sed` 命令全称是`Stram editor流编辑器`, 作用是利用脚本来处理文本文件。
+
+**格式**
+
+`sed [-hnV][-e <script>][-f <script文件>][文本文件]`
+
+**参数说明**
+
+- `-e <script>`: `--expression=<script>` , 用指定的 `script脚本` 来处理输入的文本文件，
+  - 这个`-e`可以省略，直接写`script脚本`。
+  - `script脚本`经常用引号括起来, `sed '3a新内容' xxxfile`
+- `-f <script文件>`: `--file=<script文件>`, 用指定的 `script脚本文件` 来处理输入的文本文件。
+- `-h`: `--help`显示帮助。
+- `-n` :  `--quiet` 或 `--silent` 仅显示被 `script`修改的行。
+- `-V` :  `--version` 显示版本信息。
+- `-i[后缀]`:  替换和备份源文件, 假设`sed`处理文件`test.txt`,  
+  - `sed -i -e '/MacOS/c\Windows' test.txt` , 把sed结果写到`test.txt`中
+  - `sed -ibackup -e '/MacOS/c\Windows' test.txt`, 把文件备份为`test.txtbackup,`把sed结果写到`test.txt`中
+
+
+**script脚本动作**
+
+- a：新增， a 的后面可以接字串，而这些字串会在新的一行出现(目前的下一行)
+  - 脚本动作和参数可以使用`\`来隔开, 方便阅读,   `sed "3a\新内容" xxxfile`
+  - 脚本动作前面是数字, 则是匹配指定第n行, `sed '1,4a\newline' file`在第1~4行后面新增一行newLine
+  - 脚本动作前面是`/text/`, 则是匹配`text`字符串的行
+- c：整行取代， `sed '/Linux/c\MacOS' sedTest.txt`, 把匹配到Linux的**行**替换为MacOS
+- d：删除，把匹配到的行删除
+- i：插入， i 的后面可以接字串，而这些字串会在新的一行出现(目前的上一行)；
+- p：打印，亦即将某个选择的数据印出。通常 p 会与参数 sed -n 一起运行～
+- s：字符串代替，可以搭配正规表示法, 
+- `sed "1,20s/a/A/g" file`, 在第1~12行, 把每一行的a替换为A
+  - ```sed "s/a/A/3g" file```, 在每一行中, 第三个匹配到的a替换为A
+
+
+
+
+
+**a新增内容示例**
+
+`a`新增,  `sed 3anewLine [file]`, 在第三行下面, 新增(`a`)一行内容为`newLine`的文本. 
+
+注意，这个只是将文字处理了，没有写入到文件里，文件里还是之前的内容。
+
+```shell
+[root@centos7 ~]# cat sedTest.txt 
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 ~]# sed 3a\newLine sedTest.txt                           
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  # 在第三行后面新增一行newLine
+newLine
+Linux test
+```
+
+`sed -e "/Linux/a\newline" sedTest.txt`,  匹配字符串Linux
+
+```shell
+[root@centos7 ~]# cat sedTest.txt                      
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 ~]# sed -e "/Linux/a\newline" sedTest.txt
+HELLO LINUX!  
+Linux is a free unix-type opterating system. #匹配到Linux, 往下新增一行newline
+newline
+This is a linux testfile!  
+Linux test #匹配到Linux, 往下新增一行newline
+newline
+```
+
+
+
+**i插入内容示例**
+
+```shell
+[root@centos7 ~]# cat sedTest.txt                      
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 ~]# sed 3i\newline sedTest.txt 
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+newline
+This is a linux testfile!  #原本是第三行, 在此行前面插入一行newline
+Linux test
+```
+
+
+
+**d删除示例**
+
+```shell
+[root@centos7 ~]# cat sedTest.txt 
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 ~]# sed '/Linux/d' sedTest.txt  #把匹配到`Linux`的行删除
+HELLO LINUX!  
+This is a linux testfile! 
+[root@centos7 ~]# sed '3d' sedTest.txt  # 把第3行删除
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+Linux test
+```
+
+
+
+**c替换示例**
+
+```shell
+[root@centos7 root_desktop]# cat sedTest.txt 
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 root_desktop]# sed '/Linux/c\MacOS' sedTest.txt 
+HELLO LINUX!  
+MacOS  # 把匹配到Linux的行内容都替换为MacOS
+This is a linux testfile!  
+MacOS
+```
+
+
+
+**s替换示例**
+
+```shell
+[root@centos7 root_desktop]# cat sedTest.txt 
+HELLO LINUX!  
+Linux is a free unix-type opterating system.  
+This is a linux testfile!  
+Linux test
+[root@centos7 root_desktop]# sed "s/Linux/MacOS/g" sedTest.txt 
+HELLO LINUX!  
+MacOS is a free unix-type opterating system.   # 仅仅把Linux替换为MacOS
+This is a linux testfile!  
+MacOS test
+```
+
+
+
+**多个匹配**
+
+依次执行两次script匹配
+
+```shell
+sed -e 's/Linux/Windows/g' -e 's/Windows/Mac OS/g' sedTest.txt 
+```
+
+
+
+**sed执行完后写入文件**
+
+上面介绍的所有文件操作都支持在缓存中处理然后打印到控制台，实际上没有对文件修改。想要保存到原文件的话可以用`> file`或者`-i`来保存到文件
+
+
+
+#### awk指令
+
+
+
+
 
 
 
@@ -2297,10 +2507,200 @@ e
 
 ### 自定义函数
 
+**定义函数**
+
+在Shell中定义函数的方法如下：
+
+```shell
+function 函数名 {
+    命令1
+    命令2
+    ...
+}
+```
+
+或者
+
+```shell
+函数名 () {
+    命令1
+    命令2
+    ...
+}
+```
 
 
 
+**带参函数**
+
+函数可以接受参数。参数通过`$1`、`$2`、`$3`等变量来引用
+
+```bash
+[root@centos7 ~]# cat greet.sh 
+#!/bin/bash
+
+function greet {
+    echo "Hello, $1, $2!"
+}
+
+# 多参数空格隔开
+greet Tom, Jan
+
+[root@centos7 ~]# sh greet.sh 
+Hello, Tom, Jan!
+```
+
+- `$1`~`$9`：函数的第一个到第9个的参数。若多于9个，那么第10个参数用`${10}`的形式引用，以此类推。
+- `$0`：函数所在的脚本名。
+- `$#`：函数的参数总数。
+- `$@`：函数的全部参数，参数之间使用空格分隔。
+- `$*`：函数的全部参数，参数之间使用变量`$IFS`值的第一个字符分隔，默认为空格，但是可以自定义。
 
 
 
-todo 补awk, 三剑客命令
+**获取函数返回值**
+
+```shell
+[root@centos7 ~]# cat f2.sh 
+#!/bin/bash
+
+function add {
+    local sum=$(($1 + $2))
+    echo "$sum, hahaha"
+    # return后面不跟参数, return等效于return 0。
+    return 0
+}
+
+# 获取函数输出值
+result=$(add 2 3)
+echo $result
+
+# 函数执行状态码0成功, 非0失败
+echo $?
+
+[root@centos7 ~]# sh f2.sh 
+5, hahaha
+0
+```
+
+
+
+**全局变量和局部变量，local 命令**
+
+函数体内直接声明的变量，属于全局变量，整个脚本都可以读取。
+
+函数体内用`local`命令声明局部变量,  函数体外引用不到。
+
+```shell
+[root@centos7 root_desktop]# cat fn_var.sh 
+#!/bin/bash
+
+fn () {
+  local local_foo
+  local_foo=1
+  echo "fn: local_foo = $local_foo"
+
+  global_foo=2
+  echo "fn: global_foo = $global_foo"
+
+}
+
+fn
+echo "local_foo=$local_foo"
+echo "global_foo=$global_foo"
+
+[root@centos7 root_desktop]# sh fn_var.sh 
+fn: local_foo=1
+fn: global_foo=2
+local_foo=
+global_foo=2
+```
+
+
+
+### 一个完整的自定义tomcat服务管理脚本
+
+```shell
+#!/bin/sh
+
+BOOT_PATH=$(cd `dirname $0`; pwd)
+BIN_PATH=${BOOT_PATH}/bin
+LOG_PATH=${BOOT_PATH}/logs
+
+start(){
+    echo ">>>Server starting..."
+    rm -f ${LOG_PATH}/*.out
+    rm -f ${LOG_PATH}/*.log
+    ${BIN_PATH}/startup.sh
+    echo ">>>Server started."
+}
+stop(){
+ 	echo ">>>Server stopping..."
+    ${BIN_PATH}/shutdown.sh
+    sleep 2
+    stopall
+    echo ">>>Server stopped."
+}
+stopall(){   
+    ps -ef|grep ${BIN_PATH}|grep -v "grep"|awk '{print $2}'|while read pid
+	do
+		kill $pid
+	done
+	sleep 2
+	ps -ef|grep ${BIN_PATH}|grep -v "grep"|awk '{print $2}'|while read pid
+	do
+		kill -9 $pid
+	done
+} 
+
+case "$1" in  
+  start)  
+    start  
+    ;;  
+  stop)   
+    stop
+    ;; 
+  stopall)  
+    echo ">>>Server stopping..."
+    stopall
+    echo ">>>Server stopped."
+    ;;  
+  restart)  
+    stop  
+    sleep 1
+    start  
+    ;;  
+  stat)
+    echo "======================"
+    echo "Process Info:"
+    ps -ef|grep ${BIN_PATH}|grep -v grep
+     
+    echo ""
+    ps -ef|grep ${BIN_PATH}|grep -v grep|awk '{print $2}'|while read pid
+	do
+	    echo "--------------"
+	    echo "Handler QTY:"
+		#lsof -n| sort|uniq -c|sort -nr|grep $pid
+		lsof -n|awk '{print $2}'|sort|uniq -c|sort -nr|grep $pid
+		
+		echo ""
+		echo "Socket QTY:"
+		ls /proc/$pid/fd -l|grep socket:|wc -l
+		echo "---------------"
+	done
+  	;; 
+  port)
+    netstat -tunlp |grep $2
+  ;;
+  log)
+  	echo "================================="
+  	tail ${LOG_PATH}/catalina.out -n 500
+  	echo "================================="
+  	;;
+  *)  
+    echo "Usage: {start|stop|restart|stat|log|port}"  
+    ;;  
+esac
+
+exit 
+```
