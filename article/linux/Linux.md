@@ -697,7 +697,7 @@ awk、grep、sed是linux操作文本的三大利器，合称文本三剑客。�
 
 grep全称是 `Global Regular Expression Print`, 使用正则表达式搜索文本，并把匹配的行打印出来。
 
-**格式**
+**语法**
 
 `grep [option] pattern file`,  PATTERN支持正则
 
@@ -723,7 +723,7 @@ grep全称是 `Global Regular Expression Print`, 使用正则表达式搜索文�
 
 `sed` 命令全称是`Stram editor流编辑器`, 作用是利用脚本来处理文本文件。
 
-**格式**
+**语法**
 
 `sed [-hnV][-e <script>][-f <script文件>][文本文件]`
 
@@ -887,7 +887,262 @@ sed -e 's/Linux/Windows/g' -e 's/Windows/Mac OS/g' sedTest.txt
 
 #### awk指令
 
+`awk`取自于它的创始人`Alfred Aho 、Peter Weinberger 和 Brian Kernighan` 姓氏的首个字母。 实际上 AWK 的确拥有自己的语言： AWK 程序设计语言 ， 三位创建者已将它正式定义为“**样式扫描和处理语言**”。
 
+awk是一个强大的文本**分析**工具，相对于grep的查找，sed的编辑，awk在其对数据分析并生成报告时，显得尤为强大。简单来说awk就是把文件逐行的读入，以空格为默认分隔符将每行切片，切开的部分再进行各种分析处理。
+
+**语法**
+
+`awk [选项参数] 'script' var=value file(s)`
+`awk [选项参数] -f scriptfile var=value file(s)`
+
+**参数说明**：
+
+- `-F 分隔符`:  `--field-separator 分隔符` 指定输入文件折分隔符(默认空格或tab)，分隔符可以是一个字符串或者正则表达式
+- `-v var=value`: `--asign var=value` 赋值一个用户定义变量。
+- `-f scripfile`: `--file scriptfile` 从脚本文件中读取awk命令。
+
+
+
+**示例**
+
+```shell
+[root@centos7 ~]# cat awkDemo.txt 
+2 this is a test
+3 Are you like awk
+This's a test
+10 There are orange,apple,mongo
+[root@centos7 ~]# awk '{print $1,$4}' awkDemo.txt    # $1表示第一个单次, $0代表整行
+2 a
+3 like
+This's 
+10 orange,apple,mongo
+[root@centos7 root_desktop]# awk -F '[ ,]'  '{print $1,$2,$5}' awkDemo.txt   #以空格和,作为分隔符
+2 this test
+3 Are awk
+This's a 
+10 There apple
+[root@centos7 root_desktop]# awk '/^This/' awkDemo.txt  # 匹配This
+This's a test
+```
+
+
+
+**内置变量**
+
+- `FILENAME`：当前文件名
+- `NF`：分割后的字段数量
+- `FS`：字段分隔符，默认是空格和制表符。
+- `RS`：行分隔符，用于分割每一行，默认是换行符。
+- `OFS`：输出字段的分隔符，用于打印时分隔字段，默认为空格。
+- `ORS`：输出记录的分隔符，用于打印时分隔记录，默认为换行符。
+- `OFMT`：数字输出的格式，默认为`％.6g`。
+
+```shell
+[root@centos7 ~]# cat awkDemo.txt 
+2 this is a test
+3 Are you like awk
+This's a test
+10 There are orange,apple,mongo
+[root@centos7 ~]# awk '{print NF}' awkDemo.txt  # 切分后的段数
+5
+5
+3
+4
+[root@centos7 ~]# awk '{print $NF}' awkDemo.txt  # $段数, 相当于取最后一段
+test
+awk
+test
+orange,apple,mongo
+```
+
+
+
+**内置函数**
+
+内置函数，方便对原始数据的处理
+
+- `toupper()`：字符转为大写。
+- `tolower()`：字符转为小写。
+- `length()`：返回字符串长度。
+- `substr()`：返回子字符串。
+- `sin()`：正弦。
+- `cos()`：余弦。
+- `sqrt()`：平方根。
+- `rand()`：随机数。
+
+```shell
+[root@centos7 ~]# cat awkDemo.txt 
+2 this is a test
+3 Are you like awk
+This's a test
+10 There are orange,apple,mongo
+[root@centos7 ~]# awk '{print $NF}' awkDemo.txt  # $段数, 相当于取最后一段
+test
+awk
+test
+orange,apple,mongo
+[root@centos7 ~]# awk '{print toupper($NF)}' awkDemo.txt                          
+TEST
+AWK
+TEST
+ORANGE,APPLE,MONGO
+```
+
+
+
+**if 语句**
+
+`awk`提供了`if`结构，用于编写复杂的条件
+
+```shell
+[root@centos7 ~]# cat awkDemo.txt 
+2 this is a test
+3 Are you like awk
+This's a test
+10 There are orange,apple,mongo
+[root@centos7 ~]# awk '{print $1,$2}' awkDemo.txt    
+2 this
+3 Are
+This's a
+10 There
+[root@centos7 ~]# awk '{if ($2 > "t") print $1}' awkDemo.txt 
+2
+```
+
+把每一行按照空格分割之后，如果第二个单词大于`t`，就输出第一个单词。这里对字符的大小判断应该是基于字符长度和 unicode 编码。
+
+
+
+### 其他常用的文本处理命令
+
+#### cut
+
+cut命令主要用来切割字符串，可以对输入的数据进行切割然后输出。
+
+**语法**
+
+`cut [参数] [文件]`
+
+**参数说明**
+
+- -b: 以字节为单位进行分割
+- -c: 以字符为单位进行分割 
+- -d: 自定义分隔符，默认为制表符 
+- -f: 显示cut后的第几段字符
+
+```shell
+[root@centos7 ~]# cat t.log 
+http://192.168.200.10/index1.html 
+http://192.168.200.10/index2.html
+http://192.168.200.20/index1.html
+http://192.168.200.30/index1.html
+http://192.168.200.40/index1.html
+http://192.168.200.30/order.html
+http://192.168.200.10/order.html
+[root@centos7 ~]# cat t.log | cut -d '/' -f 3      
+192.168.200.10
+192.168.200.10
+192.168.200.20
+192.168.200.30
+192.168.200.40
+192.168.200.30
+192.168.200.10
+```
+
+
+
+### sort
+
+sort 对指定文本排序, 默认将文本文件的第一列以 ASCII 码的次序排列，并将结果输出到标准输出。
+
+**格式**
+
+`sort [参数][文件][-k field1[,field2]]`
+
+**参数**
+
+- `-b`: 忽略每行前面开始出的空格字符。
+- `-c`:  检查文件是否已经按照顺序排序。
+- `-d`:  排序时，处理英文字母、数字及空格字符外，忽略其他的字符。
+- `-f`:  排序时，将小写字母视为大写字母。
+- `-i`:  排序时，除了040至176之间的ASCII字符外，忽略其他的字符。
+- `-m`:  将几个排序好的文件进行合并。
+- `-M`:  将前面3个字母依照月份的缩写进行排序。
+- `-n`:  依照数值的大小排序。
+- `-u`:  意味着是唯一的(unique)，输出的结果是去完重了的。
+- `-o<输出文件> `: 将排序后的结果存入指定的文件。
+- `-r`:  以相反的顺序来排序。
+- `-t<分隔字符>`:  指定排序时所用的栏位分隔字符。
+- `-k [field]`: `sort [file] -k [field1]`, 按照指定列排序
+
+
+
+#### uniq
+
+用于检查及删除文本文件中重复出现的行列，一般与 sort 命令结合使用。
+
+**格式**
+
+`uniq [参数][输入文件][输出文件]`
+
+**参数**
+
+- `-c`: 在每列旁边显示该行重复出现的次数。
+- `-d`:  仅显示重复出现的行列。
+- `-f<栏位>`:  忽略比较指定的栏位。
+- `-s<字符位置>`:  忽略比较指定的字符。
+- `-u`: 仅显示出一次的行列。
+- `-w<字符位置>`: 指定要比较的字符。
+- `[输入文件] `: 指定已排序好的文本文件。不指定则从标准读取数据。
+- `[输出文件]`: 指定输出的文件。不指定则将内容显示到标准输出设备（显示终端）。
+
+```shell
+[root@centos7 practise]# cat t.log
+http://192.168.200.10/index1.html 
+http://192.168.200.10/index2.html
+http://192.168.200.20/index1.html
+http://192.168.200.30/index1.html
+http://192.168.200.40/index1.html
+http://192.168.200.30/order.html
+http://192.168.200.10/order.html
+[root@centos7 practise]# cat t.log | cut -d '/' -f 3| sort | uniq -c | sort -nr
+      3 192.168.200.10
+      2 192.168.200.30
+      1 192.168.200.40
+      1 192.168.200.20
+```
+
+
+
+#### diff
+
+逐行比较文件
+
+```shell
+[root@centos7 practise]# diff t.log t2.log -y -W 100 # 并列显示比较结果, 并以100的列宽展示
+http://192.168.200.10/index1.html             | http://192.168.200.11/index1.html 
+http://192.168.200.10/index2.html             | http://192.168.200.22/index1.html
+http://192.168.200.20/index1.html             | http://192.168.200.30/index2.html
+http://192.168.200.30/index1.html             | http://192.168.200.42/index1.html
+http://192.168.200.40/index1.html             | diff line
+http://192.168.200.30/order.html              | http://192.168.200.33/order.html
+                                              > http://192.168.200.10/order.html
+http://192.168.200.10/order.html                http://192.168.200.10/order.html
+```
+
+
+
+
+
+paste：合并文件文本行。
+join：基于某个共享字段来联合两个文件的文本行。
+comm：逐行比较两个已经排好序的文件。
+
+patch：对原文件打补丁。
+tr：转换或删除字符。
+
+aspel：交互式拼写检查器。.
 
 
 
@@ -1367,7 +1622,7 @@ Linux 硬盘分 IDE 硬盘和 SCSI 硬盘，目前基本上是 **SCSI** 硬盘.
 
 ps 命令是用来查看目前系统中进程执行情况.
 
-`格式`:
+`语法`:
 
 ​	ps [option]
 
@@ -1565,7 +1820,7 @@ systemctl 指令管理的服务在 /usr/lib/systemd/system 查看
 
 top命令可以实时监控正在执行的进程
 
-**格式**:
+**语法**:
 
 ​	top [option]
 
@@ -1589,7 +1844,7 @@ top命令可以实时监控正在执行的进程
 
 ## netstat网络监控
 
-**格式**:
+**语法**:
 
 ​	netstat [option]
 
@@ -1665,7 +1920,7 @@ firefox-60.2.2-1.el7.centos.x86_64
   - 如果是 i686、i386 表示 32 位系统，
   - noarch 表示通用
 
-**格式**
+**语法**
 
 ​	rpm [option] [参数]
 
@@ -2477,7 +2732,7 @@ Please input the path to the file:
 **`basename`函数**
 用于获取文件名, 根据给出的文件路径截取出文件名
 
-格式:
+语法:
 `basename [pathname] [suffix]`
 
 - 根据根据指定字符串或路径名进行截取文件名, 比如: 根据路径"/root/shells/aa.txt", 可以截取出 aa.txt；
@@ -2495,7 +2750,7 @@ e
 **`dirname`函数**
 
 从指定文件的绝对路径, 去除文件名，返回剩下的前缀目录路径
-格式:
+语法:
 `dirname [pathname]`
 
 ```shell
@@ -2704,3 +2959,220 @@ esac
 
 exit 
 ```
+
+
+
+# 13 日志
+
+系统日志文件通常保存在 /var/log 目录下。
+
+| 日志文件              | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ |
+| **/var/log/boot.log** | 系统启动日志                                                 |
+| **/var/log/cron**     | 记录与系统定时任务相关的日志                                 |
+| /var/log/cups/        | 记录打印信息的日志                                           |
+| /var/log/dmesg        | 记录了系统在开机时内核自检的信息。也可以使用 dmesg 命令直接查看内核自检信息 |
+| /var/log/btmp         | 记录错误登录的日志。这个文件是二进制文件，不能直接用 Vi 查看，而要使用 lastb 命令查看 |
+| **/var/log/lastlog**  | 记录系统中所有用户最后一次的登录时间的日志。这个文件也是二进制文件，不能直接用 Vi 查看。而要使用 lastlog 命令查看 |
+| **/var/log/maillog**  | 记录邮件信息的日志                                           |
+| **/var/log/messages** | 它是**核心系统日志文件**，其中包含了系统启动时的引导信息，以及系统运行时的其他状态消息。I/O 错误、网络错误和其他系统错误都会记录到此文件中。其他信息，比如某个人的身份切换为 root，已经用户自定义安装软件的日志，也会在这里列出 |
+| /var/log/secure       | 记录验证和授权方面的信息，只要涉及账户和密码的程序都会记录，比如系统的登录、ssh 的登录、su 切换用户，sudo 授权，甚至添加用户和修改用户密码都会记录在这个日志文件中 |
+| /var/log/wtmp         | 永久记录所有用户的登录、注销信息，同时记录系统的启动、重启、关机事件。同样，这个文件也是二进制文件。无法直接查看, 要**使用 last 命令查看** |
+| **/var/run/utmp**     | 记录当前已经登录的用户的信息。这个文件会随着用户的登录和注销而不断变化，只记录当前登录用户的信息。无法直接查看,  要**使用 w、who、users 等命令查看** |
+
+
+
+## 13.1 rsyslogd日志服务
+
+rsyslogd 是一个用于在 Linux 系统上收集、处理和转发日志的系统守护进程。它是目前较为流行的 Linux 日志管理工具之一，取代了Linux6的 syslogd 工具。rsyslogd 是一个强大而灵活的 Linux 系统日志管理工具，可以帮助系统管理员更好地管理和维护系统日志信息。
+
+rsyslogd 可以接收来自不同源头(包括系统内核、应用程序、网络设备和远程主机)的日志信息，并将这些信息按照管理员配置的规则进行分类、过滤、格式化、存储和转发到其他系统中进行集中管理。
+
+rsyslogd 还支持日志信息的压缩、加密和数字签名等安全性功能，确保收集和传输的日志信息的完整性和机密性。
+
+
+
+**检查命令**
+
+```shell
+# 检查 rsyslogd 服务是否正在运行
+systemctl status rsyslog
+# 检查是否开机自启动
+systemctl is-enabled rsyslog
+# 设置开机自启动
+systemctl enable rsyslog
+```
+
+
+
+**日志配置文件`/etc/rsyslog.conf`**
+
+rsyslogd 服务是依赖其配置文件 /etc/rsyslog.conf 来确定哪个服务的什么等级的日志信息会被记录在哪个位置.
+
+
+
+**日志格式**
+
+只要是由日志服务 rsyslogd 记录的日志文件，格式就都是一样的。
+
+日志文件的格式包含以下 4 列：
+
+- 事件产生的时间。
+- 产生事件的服务器的主机名。
+- 产生事件的服务名或程序名。
+- 事件的具体信息。
+
+```shell
+[root@centos7 ~]# tail -n 2 /var/log/secure
+Jan 15 18:30:09 centos7 sshd[79389]: pam_unix(sshd:session): session opened for user root by (uid=0)
+Jan 15 18:30:09 centos7 sshd[79388]: pam_unix(sshd:session): session opened for user root by (uid=0)
+```
+
+
+
+## 13.2 日志轮替
+
+日志轮替就是把旧的日志文件移动并改名，同时建立新的空日志文件，当旧日志文件超出保存的范围时就删除。
+
+**logrotate配置文件**
+
+logrotate 是一个 Linux 系统中常用的日志文件管理工具。配置文件位于 /etc/logrotate.conf 和 /etc/logrotate.d/
+
+```shell
+[root@centos7 ~]# cat /etc/logrotate.conf 
+# see "man logrotate" for details
+# rotate log files weekly
+weekly
+
+# keep 4 weeks worth of backlogs
+rotate 4
+
+# create new (empty) log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# uncomment this if you want your log files compressed
+#compress
+
+# RPM packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# no packages own wtmp and btmp -- we'll rotate them here
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp # 建立的新日志文件，权限是 0664 ，所有者是 root ，所属组是 utmp 组
+    minsize 1M # 日志文件最小轮替大小是1MB 。轮替时间到但日志没超1MB也不进行日志转储
+    rotate 1
+}
+
+/var/log/btmp {
+    missingok
+    monthly
+    create 0600 root utmp
+    rotate 1
+}
+```
+
+**配置说明**
+
+- rotate count 表示保留日志文件的个数，超过这个数量就会删除较早的文件；
+- weekly|daily|monthly 表示轮转间隔，可以按周、日或月来轮转；
+- compress|nocompress 表示是否压缩轮转后的日志文件；
+- delaycompress 表示延迟压缩，即等到下一次轮转时再压缩；
+- missingok 表示如果日志文件不存在，则忽略它而不报错；
+- notifempty 表示如果日志文件为空，则不进行轮转；
+- sharedscripts 表示所有轮转操作都在一个脚本里执行，从而避免启动多个进程；
+- postrotate command 表示在轮转完成后执行的命令，例如重新启动相关服务。
+
+
+
+**自定义日志的方式**(`推荐第二种`)
+
+- 在 /etc/logrotate.conf 配置文件中写入该日志的轮替策略
+- 在 /etc/logrotate.d/ 目录中新建立该日志的轮替文件。
+
+
+
+
+
+## 13.3 journalctl 内存日志
+
+journalctl 收集的日志文件数以千行计，而且不断更新每次开机、每个事件,  需要使用基本命令进行过滤.
+
+journalctl查看的是内存日志, 因此重启系统后会清空.
+
+journalctl 的配置文件`/etc/systemd/journald.conf`, 不建议修改
+
+
+
+**常用命令**
+
+- `journalctl -f`, 滚动查看最新
+- `journalctl -n 3`, 查看最新3条
+- `journalctl --since 19:00 --until 20:00`,  指定起始时间到结束时间的日志
+- `journalctl -o verbose`, 显示详细信息
+- `journalctl -p 0`, 按照日志优先级查看
+  - `0: 紧急情况`
+  - `1: 警报`
+  - `2: 危急`
+  - `3: 错误`
+  - `4: 警告`
+  - `5: 通知`
+  - `6: 信息`
+  - `7：调试`
+
+
+
+
+
+# 20. bt宝塔-Linux可视化管理系统
+
+https://www.bt.cn/new/index.html
+
+
+
+安装
+
+```
+yum install -y wget && wget -O install.sh https://download.bt.cn/install/install_6.0.sh && sh install.sh ed8484bec
+```
+
+安装成功后控制台会显示登录地址，账户密码
+
+```shell
+==================================================================
+Congratulations! Installed successfully!
+========================面板账户登录信息==========================
+
+ 外网面板地址: https://xxx.xxx.xxx.xxx:29686/3dda999b
+ 内网面板地址: https://172.16.255.160:29686/3dda999b
+ username: 8hvhnyqy
+ password: c9d235c4
+```
+
+宝塔还支持bt命令
+
+```shell
+[root@centos7 ~]# bt
+==================================宝塔面板命令行====================================
+(1) 重启面板服务                  (8) 改面板端口                                   |
+(2) 停止面板服务                  (9) 清除面板缓存                                 |
+(3) 启动面板服务                  (10) 清除登录限制                                |
+(4) 重载面板服务                  (11) 设置是否开启IP + User-Agent验证             |
+(5) 修改面板密码                  (12) 取消域名绑定限制                            |
+(6) 修改面板用户名                (13) 取消IP访问限制                              |
+(7) 强制修改MySQL密码             (14) 查看面板默认信息                            |
+(22) 显示面板错误日志             (15) 清理系统垃圾                                |
+(23) 关闭BasicAuth认证            (16) 修复面板(检查错误并更新面板文件到最新版)    |
+(24) 关闭动态口令认证             (17) 设置日志切割是否压缩                        |
+(25) 设置是否保存文件历史副本     (18) 设置是否自动备份面板                        |
+(26) 关闭面板ssl                  (19) 关闭面板登录地区限制                        |
+(28) 修改面板安全入口             (29) 取消访问设备验证                            |
+(0) 取消                                                                           |
+====================================================================================
+```
+
+
+
