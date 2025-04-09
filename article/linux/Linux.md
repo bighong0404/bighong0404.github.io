@@ -528,7 +528,6 @@ tail 用于输出文件中尾部的内容，默认情况下 tail 指令显示文
 
 `ln -s [原文件或目录] [软链接名] `, 给文件创建一个软连接(快捷方式)
 
-
 `ln -s /root /home/myroot`, 在/home 目录下创建一个软连接 myroot，连接到 /root 目录
 `rm /home/myroot`,  删除软连接 myroot
 

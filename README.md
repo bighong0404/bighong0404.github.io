@@ -98,7 +98,11 @@
 
 ---
 
+### AI
+  - [deepseek基础科普](article/AI/deepseek基础概念.md)
 
-### 工作总结2
+---
+
+### 工作总结
 
 ---
